@@ -14,9 +14,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <!-- Ícone Oficial da Tela de Início (iPhone / Android / Favicon) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/icone.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icone.png">
-    <link rel="shortcut icon" href="/icone.png">
+    <link id="apple-icon-link" rel="apple-touch-icon" sizes="180x180" href="icone.png?v=2">
+    <link id="favicon-link" rel="icon" type="image/png" sizes="192x192" href="icone.png?v=2">
+    <link rel="shortcut icon" href="icone.png?v=2">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -173,6 +173,21 @@
                             Liberar Meu Próprio Celular (VIP)
                         </button>
                     </div>
+                </div>
+
+                <!-- Personalizador de Ícone Direto no App -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-emerald-400 uppercase block">🖼️ Ícone da Tela de Início (iPhone)</span>
+                            <span class="text-[10px] text-slate-400 block">Escolha a imagem para forçar o ícone no Safari</span>
+                        </div>
+                        <img id="preview-icone-atual" src="icone.png?v=2" onerror="this.style.display='none'" class="w-10 h-10 rounded-xl border border-slate-700 object-cover">
+                    </div>
+                    <label class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer">
+                        <span>📁</span> Escolher Foto do Ícone no Aparelho
+                        <input type="file" accept="image/*" onchange="definirIconePersonalizado(event)" class="hidden">
+                    </label>
                 </div>
             </div>
         </div>
@@ -1756,7 +1771,79 @@ _Gerado via BaseMoto_`;
             copiarTextoParaAreaDeTransferencia(texto, 'Resumo copiado com Pix e valores!');
         }
 
+        // ==================== MOTOR DE ÍCONE PARA IPHONE (SAFARI) ====================
+        function aplicarDataUrlNoIcone(dataUrl) {
+            const appleLink = document.getElementById('apple-icon-link');
+            const favLink = document.getElementById('favicon-link');
+            const previewImg = document.getElementById('preview-icone-atual');
+            if (appleLink) appleLink.href = dataUrl;
+            if (favLink) favLink.href = dataUrl;
+            if (previewImg) {
+                previewImg.src = dataUrl;
+                previewImg.style.display = 'block';
+            }
+        }
+
+        function converterImagemParaIconeApple(imgElement, salvarLocal = false) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 180;
+                canvas.height = 180;
+                const ctx = canvas.getContext('2d');
+                // Fundo escuro sólido (iPhone exige ícone sem transparência)
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(0, 0, 180, 180);
+                ctx.drawImage(imgElement, 0, 0, 180, 180);
+                const dataUrl = canvas.toDataURL('image/png');
+                aplicarDataUrlNoIcone(dataUrl);
+                if (salvarLocal) {
+                    localStorage.setItem('basemoto_custom_icon', dataUrl);
+                    mostrarToast('Ícone aplicado! Agora adicione à Tela de Início no Safari.');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function definirIconePersonalizado(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => converterImagemParaIconeApple(img, true);
+                img.src = e.target.result;
+            };
+            reader.readAsText ? reader.readAsDataURL(file) : null;
+        }
+
+        function inicializarIconeAutomatico() {
+            // 1. Verifica se já existe um ícone salvo localmente
+            const salvo = localStorage.getItem('basemoto_custom_icon');
+            if (salvo) {
+                aplicarDataUrlNoIcone(salvo);
+                return;
+            }
+
+            // 2. Tenta carregar do repositório qualquer variação comum de nome de arquivo
+            const possiveisNomes = ['icone.png', 'Icone.png', 'ICONE.PNG', 'icone.jpg', 'icone.jpeg', 'logo.png'];
+            let indice = 0;
+
+            function tentarProximo() {
+                if (indice >= possiveisNomes.length) return;
+                const nome = possiveisNomes[indice++];
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => converterImagemParaIconeApple(img, false);
+                img.onerror = () => tentarProximo();
+                img.src = `${nome}?v=${Date.now()}`;
+            }
+
+            tentarProximo();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+            inicializarIconeAutomatico();
             carregarDados();
             inicializarTabelaPrecos();
             document.getElementById('date-selector').value = getHojeISO();
