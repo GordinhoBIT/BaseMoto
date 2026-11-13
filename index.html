@@ -132,14 +132,35 @@
 
             <!-- Conteúdo do Gerador (visível após senha) -->
             <div id="admin-painel-box" class="hidden space-y-4">
+                <!-- Resumo da Carteira de Clientes -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-slate-950 border border-emerald-500/30 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] font-bold text-emerald-400 uppercase block">Ativos</span>
+                        <span id="adm-stat-ativos" class="text-lg font-extrabold text-white">0</span>
+                    </div>
+                    <div class="bg-slate-950 border border-amber-500/30 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] font-bold text-amber-400 uppercase block">Vencendo</span>
+                        <span id="adm-stat-vencendo" class="text-lg font-extrabold text-amber-300">0</span>
+                    </div>
+                    <div class="bg-slate-950 border border-rose-500/30 rounded-2xl p-2.5 text-center">
+                        <span class="text-[10px] font-bold text-rose-400 uppercase block">Pendentes</span>
+                        <span id="adm-stat-vencidos" class="text-lg font-extrabold text-rose-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Formulário de Novo Cliente / Gerador -->
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 space-y-3">
-                    <div>
-                        <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Nome do Cliente (Motoboy)</label>
-                        <input type="text" id="adm-cliente-nome" placeholder="Ex: Carlos" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-amber-500">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">➕ Cadastrar / Gerar Acesso</span>
                     </div>
 
                     <div>
-                        <label class="text-[11px] font-bold text-amber-400 uppercase block mb-1">WhatsApp do Cliente (Somente Números com DDD)</label>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Nome do Cliente (Motoboy)</label>
+                        <input type="text" id="adm-cliente-nome" placeholder="Ex: Carlos da Titan" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-amber-400 uppercase block mb-1">WhatsApp do Cliente (Com DDD)</label>
                         <input type="tel" id="adm-cliente-whats" inputmode="numeric" placeholder="Ex: 82999998888" oninput="gerarCodigoClienteAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-amber-500">
                     </div>
 
@@ -157,13 +178,26 @@
 
                     <div class="pt-2 border-t border-slate-800 text-center space-y-2">
                         <span class="text-[10px] font-bold text-slate-400 uppercase block">Código Gerado para este Número:</span>
-                        <div id="adm-codigo-resultado" class="bg-slate-900 border border-emerald-500/40 rounded-xl py-3 px-4 text-lg font-extrabold tracking-widest text-emerald-400 select-all">
+                        <div id="adm-codigo-resultado" class="bg-slate-900 border border-emerald-500/40 rounded-xl py-2.5 px-4 text-base font-extrabold tracking-widest text-emerald-400 select-all">
                             DIGITE O WHATSAPP
                         </div>
-                        <button type="button" onclick="copiarMensagemVendaAdmin()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
-                            <span>📋</span> Copiar Código + Instruções p/ WhatsApp
+                        <button type="button" onclick="salvarECopiarVendaAdmin()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10">
+                            <span>✅</span> Salvar Membro & Copiar Código p/ WhatsApp
                         </button>
                     </div>
+                </div>
+
+                <!-- Lista de Clientes / Controle de Mensalidades -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">👥 Meus Membros Cadastrados</h4>
+                        <div class="flex gap-1 text-[10px] font-bold">
+                            <button type="button" onclick="filtrarClientesAdmin('todos')" id="adm-filtro-todos" class="px-2 py-1 rounded-lg bg-slate-800 text-white">Todos</button>
+                            <button type="button" onclick="filtrarClientesAdmin('pendentes')" id="adm-filtro-pendentes" class="px-2 py-1 rounded-lg text-slate-400">Pendentes</button>
+                        </div>
+                    </div>
+
+                    <div id="adm-lista-clientes" class="space-y-2 max-h-64 overflow-y-auto pr-0.5"></div>
                 </div>
 
                 <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 space-y-2">
@@ -664,6 +698,7 @@
     <script>
         const STORAGE_KEY = 'basemoto_dados_v6';
         const LICENCA_KEY = 'basemoto_licenca_v1';
+        const CLIENTES_ADMIN_KEY = 'basemoto_clientes_admin_v1';
         const SENHA_ADMIN_MESTRA = '2026'; // Senha secreta do dono (5 toques na logo da moto)
         const SEGREDO_HASH = 'BM_ARAPIRACA_2026_PRO';
 
@@ -672,9 +707,11 @@
             movimentacoes: [],
             pix: { tipo: 'CPF', chave: '', titular: '' },
             ultimaOrigem: '',
-            ultimaLoja: ''
+            ultimaLoja: '',
+            clientesAdmin: []
         };
         let filtroAtual = 'todos';
+        let filtroAdminAtual = 'todos';
         let planoAdminSelecionado = 'MENSAL';
         let contadorToquesAdmin = 0;
         let timerToquesAdmin = null;
@@ -693,13 +730,13 @@
             return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 4);
         }
 
-        // Gera um código vinculado ao WhatsApp do cliente + validade embutida
-        function criarCodigoAtivacao(whatsLimpo, tipoPlano) {
+        // Gera um código vinculado ao WhatsApp do cliente + validade embutida (permite passar data customizada)
+        function criarCodigoAtivacao(whatsLimpo, tipoPlano, dataExpCustom = null) {
             if (!whatsLimpo || whatsLimpo.length < 8) return null;
             let blocoData = 'VITA';
             if (tipoPlano === 'MENSAL') {
-                const expDate = new Date();
-                expDate.setDate(expDate.getDate() + 30);
+                const expDate = dataExpCustom ? new Date(dataExpCustom) : new Date();
+                if (!dataExpCustom) expDate.setDate(expDate.getDate() + 30);
                 const yy = String(expDate.getFullYear()).slice(-2);
                 const mm = String(expDate.getMonth() + 1).padStart(2, '0');
                 const dd = String(expDate.getDate()).padStart(2, '0');
@@ -707,6 +744,39 @@
             }
             const assinatura = gerarAssinaturaCurta(`${whatsLimpo}|${blocoData}|${SEGREDO_HASH}`);
             return `BM-${blocoData}-${assinatura}`;
+        }
+
+        function extrairInfoDoCodigo(codigo) {
+            if (!codigo) return { plano: 'MENSAL', expiraTimestamp: 0, diasRestantes: -999, status: 'vencido' };
+            const partes = codigo.trim().toUpperCase().split('-');
+            if (partes.length !== 3) return { plano: 'MENSAL', expiraTimestamp: 0, diasRestantes: -999, status: 'vencido' };
+
+            const blocoData = partes[1];
+            if (blocoData === 'VITA' || blocoData === 'DONO') {
+                return { plano: 'VITALICIO', expiraTimestamp: null, diasRestantes: 9999, status: 'vitalicio', dataFormatada: 'Vitalício ♾️' };
+            }
+
+            const ano = 2000 + parseInt(blocoData.slice(0, 2), 10);
+            const mes = parseInt(blocoData.slice(2, 4), 10) - 1;
+            const dia = parseInt(blocoData.slice(4, 6), 10);
+            const expiraDate = new Date(ano, mes, dia, 23, 59, 59);
+            const hoje = new Date();
+
+            const diffMs = expiraDate.getTime() - hoje.getTime();
+            const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            const dataFormatada = `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`;
+
+            let status = 'ativo';
+            if (diasRestantes <= 0) status = 'vencido';
+            else if (diasRestantes <= 5) status = 'vencendo';
+
+            return {
+                plano: 'MENSAL',
+                expiraTimestamp: expiraDate.getTime(),
+                diasRestantes,
+                status,
+                dataFormatada
+            };
         }
 
         function validarCodigoAtivacao(whatsLimpo, codigoDigitado) {
@@ -854,6 +924,7 @@
             if (senha === SENHA_ADMIN_MESTRA) {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-painel-box').classList.remove('hidden');
+                renderizarClientesAdmin();
             } else {
                 mostrarToast('Senha de administrador incorreta!', '🔒');
             }
@@ -880,17 +951,201 @@
             display.innerText = cod || 'DIGITE O WHATSAPP';
         }
 
-        function copiarMensagemVendaAdmin() {
-            const nome = document.getElementById('adm-cliente-nome').value.trim() || 'Parceiro';
+        function salvarECopiarVendaAdmin() {
+            const nome = document.getElementById('adm-cliente-nome').value.trim() || 'Motoboy Parceiro';
             const whats = limparTelefone(document.getElementById('adm-cliente-whats').value);
             const cod = criarCodigoAtivacao(whats, planoAdminSelecionado);
             if (!cod) {
                 mostrarToast('Digite o WhatsApp com DDD do cliente!', '⚠️');
                 return;
             }
-            const descPlano = planoAdminSelecionado === 'MENSAL' ? 'Mensal (30 dias)' : 'Vitalício';
+
+            // Salva ou atualiza o membro na lista de clientes do vendedor
+            const idxExistente = estado.clientesAdmin.findIndex(c => c.whats === whats);
+            const registroCliente = {
+                id: 'cli_' + Date.now(),
+                nome,
+                whats,
+                codigo: cod,
+                plano: planoAdminSelecionado,
+                atualizadoEm: new Date().toISOString()
+            };
+
+            if (idxExistente >= 0) {
+                estado.clientesAdmin[idxExistente] = registroCliente;
+            } else {
+                estado.clientesAdmin.unshift(registroCliente);
+            }
+
+            persistirDados();
+            renderizarClientesAdmin();
+
+            // Limpa os campos após cadastrar
+            document.getElementById('adm-cliente-nome').value = '';
+            document.getElementById('adm-cliente-whats').value = '';
+            document.getElementById('adm-codigo-resultado').innerText = 'DIGITE O WHATSAPP';
+
+            const info = extrairInfoDoCodigo(cod);
+            const descPlano = planoAdminSelecionado === 'MENSAL' ? `Mensal (Válido até ${info.dataFormatada})` : 'Vitalício ♾️';
             const texto = `🏍️ *Acesso Liberado — BaseMoto PRO*\n\nFala, *${nome}*! Aqui está sua chave exclusiva de ativação:\n\n📱 *WhatsApp cadastrado:* ${whats}\n🔑 *Código de Ativação:* ${cod}\n📅 *Plano:* ${descPlano}\n\n*Como instalar no celular:*\n1. Abra o link do app no Safari (iPhone) ou Chrome (Android)\n2. Digite seu nome, seu WhatsApp (${whats}) e o código acima\n3. Adicione à Tela de Início para usar como aplicativo!`;
-            copiarTextoParaAreaDeTransferencia(texto, 'Mensagem de ativação copiada!');
+            copiarTextoParaAreaDeTransferencia(texto, `${nome} salvo na lista e código copiado!`);
+        }
+
+        function filtrarClientesAdmin(filtro) {
+            filtroAdminAtual = filtro;
+            const btnTodos = document.getElementById('adm-filtro-todos');
+            const btnPend = document.getElementById('adm-filtro-pendentes');
+            if (filtro === 'todos') {
+                btnTodos.className = "px-2 py-1 rounded-lg bg-slate-800 text-white";
+                btnPend.className = "px-2 py-1 rounded-lg text-slate-400";
+            } else {
+                btnPend.className = "px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                btnTodos.className = "px-2 py-1 rounded-lg text-slate-400";
+            }
+            renderizarClientesAdmin();
+        }
+
+        function reativarMembroAdmin(whatsCliente) {
+            const cliente = estado.clientesAdmin.find(c => c.whats === whatsCliente);
+            if (!cliente) return;
+
+            const infoAtual = extrairInfoDoCodigo(cliente.codigo);
+            // Se o cliente ainda tinha dias restantes (ex: pagou adiantado faltando 3 dias), soma +30 dias a partir do vencimento atual; se já estava vencido, soma +30 dias a partir de hoje!
+            const baseDate = (infoAtual.expiraTimestamp && infoAtual.diasRestantes > 0)
+                ? new Date(infoAtual.expiraTimestamp)
+                : new Date();
+            baseDate.setDate(baseDate.getDate() + 30);
+
+            const novoCodigo = criarCodigoAtivacao(cliente.whats, 'MENSAL', baseDate);
+            cliente.codigo = novoCodigo;
+            cliente.plano = 'MENSAL';
+            cliente.atualizadoEm = new Date().toISOString();
+
+            persistirDados();
+            renderizarClientesAdmin();
+
+            const novaInfo = extrairInfoDoCodigo(novoCodigo);
+            const msgRenovacao = `✅ *Assinatura Renovada — BaseMoto PRO*\n\nValeu pelo pagamento, *${cliente.nome}*! Seu acesso foi renovado por mais 30 dias.\n\n📱 *WhatsApp:* ${cliente.whats}\n🔑 *Novo Código de Ativação:* ${novoCodigo}\n📅 *Nova Validade:* ${novaInfo.dataFormatada}\n\nBasta colar esse novo código na tela de ativação do seu BaseMoto! 🚀`;
+            copiarTextoParaAreaDeTransferencia(msgRenovacao, `Renovado até ${novaInfo.dataFormatada}! Código copiado!`);
+        }
+
+        function copiarCobrancaMembroAdmin(whatsCliente) {
+            const cliente = estado.clientesAdmin.find(c => c.whats === whatsCliente);
+            if (!cliente) return;
+
+            const info = extrairInfoDoCodigo(cliente.codigo);
+            let pixTexto = '';
+            if (estado.pix && estado.pix.chave) {
+                pixTexto = `\n\n💠 *Chave Pix para renovação (${estado.pix.tipo}):*\n${estado.pix.chave}\n👤 *Titular:* ${estado.pix.titular || '-'}`;
+            }
+
+            const statusTexto = info.diasRestantes <= 0
+                ? `venceu em *${info.dataFormatada}*`
+                : `vence em *${info.diasRestantes} dia(s)* (${info.dataFormatada})`;
+
+            const msg = `🏍️ *Aviso de Renovação — BaseMoto PRO*\n\nFala, *${cliente.nome}*! Tudo tranquilo no corre?\nPassando para avisar que sua assinatura mensal do *BaseMoto PRO* ${statusTexto}.${pixTexto}\n\nAssim que fizer o Pix me manda o comprovante por aqui que já te envio sua nova chave de +30 dias na hora! Tmj! 👊`;
+            copiarTextoParaAreaDeTransferencia(msg, `Cobrança de ${cliente.nome} copiada!`);
+        }
+
+        function excluirMembroAdmin(whatsCliente) {
+            const cliente = estado.clientesAdmin.find(c => c.whats === whatsCliente);
+            if (!cliente) return;
+            pedirConfirmacao(
+                'Remover Membro',
+                `Deseja remover "${cliente.nome}" da sua lista de controle?`,
+                () => {
+                    estado.clientesAdmin = estado.clientesAdmin.filter(c => c.whats !== whatsCliente);
+                    persistirDados();
+                    renderizarClientesAdmin();
+                    mostrarToast('Membro removido da lista.', '🗑️');
+                }
+            );
+        }
+
+        function renderizarClientesAdmin() {
+            const container = document.getElementById('adm-lista-clientes');
+            if (!container) return;
+
+            let qtdAtivos = 0;
+            let qtdVencendo = 0;
+            let qtdVencidos = 0;
+
+            const clientesProcessados = (estado.clientesAdmin || []).map(c => {
+                const info = extrairInfoDoCodigo(c.codigo);
+                if (info.status === 'vencido') qtdVencidos++;
+                else if (info.status === 'vencendo') {
+                    qtdAtivos++;
+                    qtdVencendo++;
+                } else {
+                    qtdAtivos++;
+                }
+                return { ...c, info };
+            });
+
+            document.getElementById('adm-stat-ativos').innerText = qtdAtivos;
+            document.getElementById('adm-stat-vencendo').innerText = qtdVencendo;
+            document.getElementById('adm-stat-vencidos').innerText = qtdVencidos;
+
+            const filtrados = clientesProcessados.filter(item => {
+                if (filtroAdminAtual === 'pendentes') {
+                    return item.info.status === 'vencido' || item.info.status === 'vencendo';
+                }
+                return true;
+            }).sort((a, b) => a.info.diasRestantes - b.info.diasRestantes);
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs text-slate-500">Nenhum membro nesta lista.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtrados.map(item => {
+                const { info } = item;
+                let badgeStatus = '';
+                let textoTempo = '';
+                let corBorda = 'border-slate-800';
+
+                if (info.status === 'vitalicio') {
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300">Vitalício ♾️</span>`;
+                    textoTempo = `Sem vencimento`;
+                } else if (info.status === 'vencido') {
+                    const diasAtraso = Math.abs(info.diasRestantes);
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Pendente / Vencido</span>`;
+                    textoTempo = diasAtraso === 0 ? `Venceu hoje (${info.dataFormatada})` : `Vencido há ${diasAtraso} dia(s) (${info.dataFormatada})`;
+                    corBorda = 'border-rose-500/40';
+                } else if (info.status === 'vencendo') {
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Vence em ${info.diasRestantes}d</span>`;
+                    textoTempo = `Faltam ${info.diasRestantes} dia(s) • Até ${info.dataFormatada}`;
+                    corBorda = 'border-amber-500/40';
+                } else {
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Ativo (${info.diasRestantes}d)</span>`;
+                    textoTempo = `Faltam ${info.diasRestantes} dias • Até ${info.dataFormatada}`;
+                }
+
+                return `
+                    <div class="bg-slate-900 border ${corBorda} rounded-xl p-3 space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <h5 class="text-xs font-extrabold text-white truncate">${item.nome}</h5>
+                                    ${badgeStatus}
+                                </div>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">📱 ${item.whats} • 🔑 <span class="text-slate-300 font-bold select-all">${item.codigo}</span></p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">⏳ ${textoTempo}</p>
+                            </div>
+                            <button type="button" onclick="excluirMembroAdmin('${item.whats}')" title="Remover da lista" class="text-slate-500 hover:text-rose-400 text-xs px-1.5 py-0.5">✕</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800/80">
+                            <button type="button" onclick="reativarMembroAdmin('${item.whats}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-extrabold py-2 px-2.5 rounded-lg text-[11px] transition active:scale-95 flex items-center justify-center gap-1">
+                                🔄 Reativar +30d
+                            </button>
+                            <button type="button" onclick="copiarCobrancaMembroAdmin('${item.whats}')" class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2 px-2.5 rounded-lg text-[11px] transition active:scale-95 flex items-center justify-center gap-1">
+                                💬 Cobrar c/ Pix
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function liberarAcessoDonoDireto() {
@@ -940,6 +1195,7 @@
                         estado.aberturas = importado.aberturas || {};
                         estado.movimentacoes = importado.movimentacoes;
                         estado.pix = importado.pix || estado.pix;
+                        estado.clientesAdmin = Array.isArray(importado.clientesAdmin) ? importado.clientesAdmin : estado.clientesAdmin;
                         persistirDados();
                         carregarDados();
                         atualizarInterface();
@@ -1279,6 +1535,7 @@
                     estado.pix = parsed.pix || { tipo: 'CPF', chave: '', titular: '' };
                     estado.ultimaOrigem = parsed.ultimaOrigem || '';
                     estado.ultimaLoja = parsed.ultimaLoja || '';
+                    estado.clientesAdmin = Array.isArray(parsed.clientesAdmin) ? parsed.clientesAdmin : [];
                 }
             } catch (e) { console.error(e); }
 
