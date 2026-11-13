@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BaseMoto — Controle do Entregador</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BaseMoto">
+    <meta name="theme-color" content="#090d16">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/10b981/090d16.png?text=BM">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { slate: { 850: '#151e2e', 900: '#0f172a', 950: '#090d16' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+        }
+        header { top: env(safe-area-inset-top); }
+        nav { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-28 select-none">
+
+    <!-- TELA DE BLOQUEIO / ATIVAÇÃO DE LICENÇA COMERCIAL -->
+    <div id="tela-licenca" class="fixed inset-0 z-[60] hidden bg-slate-950 flex flex-col items-center justify-center p-5 overflow-y-auto">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
+            <div class="text-center space-y-2">
+                <div onclick="toqueSecretoAdmin()" class="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10 cursor-pointer active:scale-95 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-extrabold text-white tracking-tight">BaseMoto PRO</h1>
+                <p class="text-xs text-slate-400 leading-relaxed">Controle financeiro, fechamento de lojas e 24 tabelas de taxas automáticas de Arapiraca.</p>
+            </div>
+
+            <div id="aviso-licenca-expirada" class="hidden bg-amber-500/15 border border-amber-500/30 text-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold text-center">
+                ⚠️ Sua licença mensal venceu! Solicite a renovação para liberar o acesso. (Seus dados continuam salvos).
+            </div>
+
+            <form onsubmit="ativarLicencaUsuario(event)" class="space-y-3.5">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Seu Nome / Apelido</label>
+                    <input type="text" id="licenca-nome" required placeholder="Ex: João Motoboy" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Seu WhatsApp (Com DDD)</label>
+                    <input type="tel" id="licenca-whats" inputmode="numeric" required placeholder="Ex: 82999998888" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm font-bold text-white placeholder-slate-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-emerald-400 uppercase block mb-1">🔑 Código de Ativação</label>
+                    <input type="text" id="licenca-codigo" required placeholder="Ex: BM-A1B2-9999" class="w-full bg-slate-950 border border-emerald-500/40 focus:border-emerald-500 rounded-xl px-3.5 py-3 text-center text-base font-extrabold tracking-widest uppercase text-emerald-400 placeholder-slate-700 focus:outline-none">
+                </div>
+
+                <p id="erro-licenca" class="hidden text-xs font-bold text-rose-400 text-center bg-rose-500/10 border border-rose-500/20 py-2 rounded-xl">
+                    ❌ Código inválido para este número de WhatsApp!
+                </p>
+
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-extrabold py-3.5 rounded-2xl text-sm shadow-lg shadow-emerald-500/20 transition">
+                    Liberar Meu Acesso
+                </button>
+            </form>
+
+            <div class="pt-3 border-t border-slate-800 text-center space-y-2">
+                <p class="text-[11px] text-slate-500">Ainda não tem sua chave de acesso?</p>
+                <button type="button" onclick="solicitarChaveNoWhatsApp()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <span>📲</span> Solicitar Código de Acesso
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SECRETO DO ADMINISTRADOR (GERADOR DE CHAVES PARA VENDA) -->
+    <div id="modal-admin" class="fixed inset-0 z-[70] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-500/40 w-full max-w-md rounded-3xl p-5 space-y-4 animate-slide-up max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">👑</span>
+                    <div>
+                        <h3 class="text-base font-extrabold text-amber-400 leading-tight">Painel do Vendedor (Admin)</h3>
+                        <p class="text-[11px] text-slate-400">Gere códigos únicos para vender o app</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharModalAdmin()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <!-- Bloco de Senha do Admin -->
+            <div id="admin-login-box" class="space-y-3">
+                <label class="text-xs font-bold text-slate-400 uppercase block">Digite sua Senha Mestra</label>
+                <input type="password" id="admin-senha-input" placeholder="Senha padrão: 2026" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-4 py-3 text-center text-lg font-extrabold text-white focus:outline-none">
+                <button type="button" onclick="autenticarAdmin()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl text-sm transition">
+                    Entrar no Gerador
+                </button>
+            </div>
+
+            <!-- Conteúdo do Gerador (visível após senha) -->
+            <div id="admin-painel-box" class="hidden space-y-4">
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 space-y-3">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Nome do Cliente (Motoboy)</label>
+                        <input type="text" id="adm-cliente-nome" placeholder="Ex: Carlos" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-amber-400 uppercase block mb-1">WhatsApp do Cliente (Somente Números com DDD)</label>
+                        <input type="tel" id="adm-cliente-whats" inputmode="numeric" placeholder="Ex: 82999998888" oninput="gerarCodigoClienteAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Plano da Licença</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="selecionarPlanoAdmin('MENSAL')" id="btn-plano-mensal" class="py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-xs transition">
+                                📅 Mensal (30 dias)
+                            </button>
+                            <button type="button" onclick="selecionarPlanoAdmin('VITALICIO')" id="btn-plano-vitalicio" class="py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition">
+                                ♾️ Vitalício (Sem venc.)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 text-center space-y-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Código Gerado para este Número:</span>
+                        <div id="adm-codigo-resultado" class="bg-slate-900 border border-emerald-500/40 rounded-xl py-3 px-4 text-lg font-extrabold tracking-widest text-emerald-400 select-all">
+                            DIGITE O WHATSAPP
+                        </div>
+                        <button type="button" onclick="copiarMensagemVendaAdmin()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5">
+                            <span>📋</span> Copiar Código + Instruções p/ WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-400">Seu Acesso neste Aparelho:</span>
+                        <button type="button" onclick="liberarAcessoDonoDireto()" class="text-[11px] font-extrabold text-sky-400 underline">
+                            Liberar Meu Próprio Celular (VIP)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificação -->
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden transition-all duration-300 w-[92%] max-w-md">
+        <div id="toast-content" class="bg-slate-800/95 backdrop-blur-md border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 text-sm font-medium">
+            <div class="flex items-center gap-2.5">
+                <span id="toast-icon">✅</span>
+                <span id="toast-msg">Ação realizada com sucesso!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cabeçalho Fixo -->
+    <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
+        <div class="max-w-lg mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <div onclick="toqueSecretoAdmin()" title="Toque 5x para Painel Admin" class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 cursor-pointer active:scale-90 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="font-extrabold text-base tracking-tight text-white leading-tight">BaseMoto</h1>
+                        <span id="badge-plano-header" class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PRO</span>
+                    </div>
+                    <p id="subtitulo-usuario-header" class="text-[11px] text-slate-400 font-medium">Controle da Base</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="date" id="date-selector" onchange="atualizarInterface()" class="bg-slate-900 border border-slate-700/80 text-slate-200 text-xs font-semibold rounded-xl px-2.5 py-2 focus:outline-none focus:border-emerald-500">
+                <button onclick="copiarResumoWhatsApp()" title="Copiar Fechamento para WhatsApp" class="p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-emerald-400 hover:bg-slate-800 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                    </svg>
+                    <span class="hidden sm:inline">Resumo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-lg mx-auto px-4 pt-4 space-y-5">
+
+        <!-- ABA 1: PAINEL DO DIA -->
+        <section id="view-dashboard" class="space-y-5">
+            <!-- Card Odômetro & Troco -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Abertura & Odômetro do Turno</h2>
+                    </div>
+                    <div id="badge-km-stats" class="text-xs font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-lg">
+                        0 km rodados
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-3 flex items-center justify-between gap-3">
+                    <div>
+                        <label for="caixa-inicial" class="block text-xs font-bold text-emerald-400">💵 Caixa Inicial / Troco (R$)</label>
+                        <span class="text-[10px] text-slate-400 block">Valor inicial em dinheiro</span>
+                    </div>
+                    <div class="w-36">
+                        <input type="number" step="0.01" min="0" id="caixa-inicial" inputmode="decimal" placeholder="0,00" onchange="salvarAbertura()" class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-500 rounded-xl px-3 py-2 text-right text-base font-extrabold text-white placeholder-slate-600 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="km-inicial" class="block text-[11px] font-medium text-slate-400 mb-1">KM Inicial</label>
+                        <input type="number" id="km-inicial" inputmode="decimal" placeholder="Ex: 45210" onchange="salvarAbertura()" class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3 py-2.5 text-base font-bold text-white placeholder-slate-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="km-final" class="block text-[11px] font-medium text-slate-400 mb-1">KM Final</label>
+                        <input type="number" id="km-final" inputmode="decimal" placeholder="Ex: 45320" onchange="salvarAbertura()" class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3 py-2.5 text-base font-bold text-white placeholder-slate-600 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-2.5 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center justify-between pr-2 border-r border-slate-800">
+                        <span class="text-slate-400">Bruto/KM:</span>
+                        <span id="stat-rs-km-bruto" class="font-extrabold text-slate-200">R$ 0,00</span>
+                    </div>
+                    <div class="flex items-center justify-between pl-1">
+                        <span class="text-slate-400">Líquido/KM:</span>
+                        <span id="stat-rs-km-liquido" class="font-extrabold text-emerald-400">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards Financeiros -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="col-span-2 bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-4 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-emerald-300/90 uppercase tracking-wider">Lucro Líquido do Dia</span>
+                        <span id="stat-qtd-entregas" class="text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full">0 entregas</span>
+                    </div>
+                    <div class="mt-1 flex items-baseline justify-between">
+                        <p id="stat-lucro-liquido" class="text-3xl font-extrabold text-white tracking-tight">R$ 0,00</p>
+                        <p class="text-xs text-slate-400">Bruto: <span id="stat-bruto" class="text-slate-200 font-semibold">R$ 0,00</span></p>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-emerald-500/20 grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-sky-400 font-bold block">💠 Recebido em Pix</span>
+                            <span id="stat-pix-total" class="text-sm font-extrabold text-white">R$ 0,00</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-[10px] text-emerald-400 font-bold block">💵 Recebido em Dinheiro</span>
+                            <span id="stat-dinheiro-total" class="text-sm font-extrabold text-white">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5">
+                    <span class="text-[11px] font-semibold text-slate-400 block">Em Mão (Caixa Atual)</span>
+                    <p id="stat-em-maos" class="text-lg font-extrabold text-emerald-400 mt-0.5">R$ 0,00</p>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Inicial + Dinheiro - Saídas</span>
+                </div>
+
+                <div onclick="mudarAba('acertos')" class="bg-slate-900 border border-amber-500/30 hover:border-amber-500/60 rounded-2xl p-3.5 cursor-pointer active:scale-[0.98] transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-amber-400">Pendente (Lojas)</span>
+                        <span class="text-[10px] text-amber-400 underline font-bold">Cobrar &rarr;</span>
+                    </div>
+                    <p id="stat-pendente" class="text-lg font-extrabold text-amber-300 mt-0.5">R$ 0,00</p>
+                    <span id="stat-pendente-qtd" class="text-[10px] text-slate-400 block mt-0.5">0 em aberto</span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5">
+                    <span class="text-[11px] font-semibold text-rose-400 block">Gasolina / Gastos</span>
+                    <p id="stat-gastos" class="text-lg font-extrabold text-rose-400 mt-0.5">R$ 0,00</p>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Descontado do lucro</span>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5">
+                    <span class="text-[11px] font-semibold text-indigo-400 block">Sangrias (Retiradas)</span>
+                    <p id="stat-sangrias" class="text-lg font-extrabold text-indigo-400 mt-0.5">R$ 0,00</p>
+                    <span class="text-[10px] text-slate-500 block mt-0.5">Guardado / Retirado</span>
+                </div>
+            </div>
+
+            <!-- Botões de Ação Rápida -->
+            <div class="grid grid-cols-3 gap-2.5">
+                <button onclick="abrirModal('entrega')" class="col-span-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-extrabold py-4 px-4 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-base transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"/><path d="M12 5v14"/>
+                    </svg>
+                    Nova Entrega
+                </button>
+
+                <button onclick="abrirModal('gasolina')" class="col-span-2 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 active:scale-[0.98] text-rose-300 font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-2 text-sm transition">
+                    <span>⛽</span> Gasolina / Gasto
+                </button>
+
+                <button onclick="abrirModal('sangria')" class="col-span-1 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 active:scale-[0.98] text-indigo-300 font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 text-sm transition">
+                    <span>💸</span> Sangria
+                </button>
+            </div>
+
+            <!-- Extrato do Dia -->
+            <div class="space-y-3 pt-1">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-200">Movimentações do Dia</h3>
+                    <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px] font-semibold">
+                        <button onclick="filtrarExtrato('todos')" id="filtro-todos" class="px-2.5 py-1 rounded-lg bg-slate-800 text-white">Todos</button>
+                        <button onclick="filtrarExtrato('entrega')" id="filtro-entrega" class="px-2.5 py-1 rounded-lg text-slate-400">Entregas</button>
+                        <button onclick="filtrarExtrato('saida')" id="filtro-saida" class="px-2.5 py-1 rounded-lg text-slate-400">Saídas</button>
+                    </div>
+                </div>
+
+                <div id="lista-movimentacoes" class="space-y-2.5"></div>
+            </div>
+        </section>
+
+        <!-- ABA 2: ACERTOS POR ESTABELECIMENTO -->
+        <section id="view-acertos" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                <h2 class="text-base font-extrabold text-white">Acerto por Estabelecimento</h2>
+                <p class="text-xs text-slate-400 mt-1">Entregas pendentes agrupadas automaticamente. Copie a cobrança com seu Pix ou dê baixa total.</p>
+
+                <div class="mt-3 flex items-center justify-between bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-800">
+                    <span class="text-xs font-medium text-slate-400">Escopo:</span>
+                    <select id="acerto-escopo" onchange="renderizarAcertos()" class="bg-transparent text-xs font-bold text-amber-400 focus:outline-none">
+                        <option value="todos" class="bg-slate-900">Todos os dias em aberto</option>
+                        <option value="dia" class="bg-slate-900">Somente data selecionada</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="lista-acertos-lojas" class="space-y-3"></div>
+        </section>
+
+        <!-- ABA 3: CONSULTAR TABELA DE TAXAS -->
+        <section id="view-tabela" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3.5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-extrabold text-white flex items-center gap-2"><span>🗺️</span> Consulta Rápida de Taxas</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">24 bases cadastradas com busca instantânea.</p>
+                    </div>
+                    <span id="contador-destinos-tabela" class="text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-xl">0 locais</span>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div>
+                        <label for="consulta-origem" class="text-[11px] font-bold text-sky-400 uppercase block mb-1">📍 Saindo de (Base / Origem)</label>
+                        <select id="consulta-origem" onchange="renderizarConsultaTabela()" class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-3 text-sm font-bold text-white focus:outline-none"></select>
+                    </div>
+
+                    <div>
+                        <label for="consulta-busca" class="text-[11px] font-bold text-emerald-400 uppercase block mb-1">🔍 Filtrar Destino (Bairro / Condomínio)</label>
+                        <div class="relative">
+                            <input type="text" id="consulta-busca" oninput="renderizarConsultaTabela()" placeholder="Digite o destino (ex: Perucaba, UFAL, Centro...)" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl pl-3.5 pr-9 py-2.5 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none">
+                            <button type="button" onclick="document.getElementById('consulta-busca').value=''; renderizarConsultaTabela();" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs px-1.5 py-1">✕</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lista-consulta-precos" class="space-y-1.5"></div>
+        </section>
+
+        <!-- ABA 4: CONFIGURAR PIX -->
+        <section id="view-pix" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                <h2 class="text-base font-extrabold text-white flex items-center gap-2"><span>💠</span> Cadastrar sua Chave Pix</h2>
+                <p class="text-xs text-slate-400">Essa chave será inserida automaticamente ao copiar o fechamento do dia ou a cobrança de cada loja.</p>
+
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Tipo de Chave Pix</label>
+                        <select id="pix-tipo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-sm font-semibold text-white focus:outline-none focus:border-sky-500">
+                            <option value="CPF">CPF</option>
+                            <option value="CNPJ">CNPJ</option>
+                            <option value="Celular">Celular</option>
+                            <option value="E-mail">E-mail</option>
+                            <option value="Chave Aleatória">Chave Aleatória</option>
+                            <option value="Pix Copia e Cola">Pix Copia e Cola</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Sua Chave Pix</label>
+                        <input type="text" id="pix-chave" placeholder="Digite sua chave Pix..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Nome do Titular</label>
+                        <input type="text" id="pix-titular" placeholder="Seu nome completo" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <button onclick="salvarConfigPix()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-sm transition active:scale-[0.98]">
+                        Salvar Chave Pix
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card de Status da Licença e Backup -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">🔐 Licença & Backup dos Dados</h3>
+                    <span id="status-licenca-aba" class="text-[11px] font-bold text-emerald-400">Ativa</span>
+                </div>
+                <p class="text-xs text-slate-400">Exporte um arquivo de backup para nunca perder seu histórico se trocar de aparelho.</p>
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <button type="button" onclick="exportarBackupJSON()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-3 rounded-xl text-xs transition">
+                        ⬇️ Baixar Backup
+                    </button>
+                    <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-3 rounded-xl text-xs transition text-center cursor-pointer">
+                        ⬆️ Restaurar Backup
+                        <input type="file" accept=".json" onchange="importarBackupJSON(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navegação Inferior (4 Abas) -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-md border-t border-slate-800/90 px-3 py-2">
+        <div class="max-w-lg mx-auto grid grid-cols-4 gap-1.5">
+            <button onclick="mudarAba('dashboard')" id="nav-dashboard" class="relative flex flex-col items-center justify-center py-2 rounded-xl text-emerald-400 bg-emerald-500/10 font-bold text-[11px] gap-1 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+                </svg>
+                <span>Diário</span>
+            </button>
+
+            <button onclick="mudarAba('acertos')" id="nav-acertos" class="relative flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 hover:text-slate-200 font-semibold text-[11px] gap-1 transition">
+                <span id="nav-badge-pendente" class="hidden absolute top-1.5 right-1/4 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/>
+                </svg>
+                <span>Acertos</span>
+            </button>
+
+            <button onclick="mudarAba('tabela')" id="nav-tabela" class="relative flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 hover:text-slate-200 font-semibold text-[11px] gap-1 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>Tabelas</span>
+            </button>
+
+            <button onclick="mudarAba('pix')" id="nav-pix" class="relative flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 hover:text-slate-200 font-semibold text-[11px] gap-1 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>
+                </svg>
+                <span>Meu Pix</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL: NOVA ENTREGA -->
+    <div id="modal-entrega" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up max-h-[94vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Nova Entrega
+                </h3>
+                <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form onsubmit="salvarEntrega(event)" class="space-y-3.5">
+                <!-- Nome da Loja / Estabelecimento (100% Manual, sem datalist) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="entrega-loja" class="text-xs font-bold text-slate-400 uppercase">Estabelecimento (Nome da Loja)</label>
+                        <button type="button" onclick="document.getElementById('entrega-loja').value=''; document.getElementById('entrega-loja').focus();" class="text-[10px] font-bold text-slate-400 hover:text-white underline">Limpar</button>
+                    </div>
+                    <input type="text" id="entrega-loja" required placeholder="Digite o nome do estabelecimento..." autocomplete="off" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none">
+                </div>
+
+                <!-- Origem (Bairro Coleta) e Destino (Bairro Destino) com Sugestões -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="entrega-coletado" class="text-xs font-bold text-sky-400 uppercase">📍 Bairro Coleta</label>
+                            <button type="button" onclick="document.getElementById('entrega-coletado').value=''; calcularValorAutomatico(); document.getElementById('entrega-coletado').focus();" class="text-[10px] text-slate-500 hover:text-slate-300">Limpar</button>
+                        </div>
+                        <input type="text" id="entrega-coletado" list="lista-bairros-origem" required placeholder="Digite a coleta..." oninput="calcularValorAutomatico()" onchange="calcularValorAutomatico()" autocomplete="off" class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none">
+                        <datalist id="lista-bairros-origem"></datalist>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="entrega-entregue" class="text-xs font-bold text-emerald-400 uppercase">🏁 Bairro Destino</label>
+                            <button type="button" onclick="document.getElementById('entrega-entregue').value=''; calcularValorAutomatico(); document.getElementById('entrega-entregue').focus();" class="text-[10px] text-slate-500 hover:text-slate-300">Limpar</button>
+                        </div>
+                        <input type="text" id="entrega-entregue" list="lista-bairros-geral" required placeholder="Digite o destino..." oninput="calcularValorAutomatico()" onchange="calcularValorAutomatico()" autocomplete="off" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm font-semibold text-white placeholder-slate-600 focus:outline-none">
+                        <datalist id="lista-bairros-geral"></datalist>
+                    </div>
+                </div>
+
+                <!-- Valor da Entrega -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="entrega-valor" class="text-xs font-bold text-slate-400 uppercase">Valor da Entrega (R$)</label>
+                        <span id="badge-auto-preco" class="text-[11px] text-emerald-400 font-bold hidden">✨ Taxa da tabela aplicada!</span>
+                        <span id="badge-consultar-preco" class="text-[11px] text-amber-400 font-bold hidden">⚠️ Taxa A Consultar (digite o valor)</span>
+                    </div>
+                    <input type="number" step="0.01" min="0.5" id="entrega-valor" inputmode="decimal" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 text-xl font-extrabold text-white focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Forma de Pagamento</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="entrega-metodo" value="Pix" checked class="peer sr-only">
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 peer-checked:border-sky-500 peer-checked:bg-sky-500/15 text-center transition">
+                                <span class="block text-sm font-extrabold text-sky-400">💠 Pix</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="entrega-metodo" value="Dinheiro" class="peer sr-only">
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/15 text-center transition">
+                                <span class="block text-sm font-extrabold text-emerald-400">💵 Dinheiro</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Situação do Pagamento</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="entrega-status" value="pago" checked class="peer sr-only">
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/15 text-center transition">
+                                <span class="block text-sm font-extrabold text-emerald-400">✅ Já foi Pago</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="entrega-status" value="pendente" class="peer sr-only">
+                            <div class="p-3 rounded-xl border border-slate-700 bg-slate-950 peer-checked:border-amber-500 peer-checked:bg-amber-500/15 text-center transition">
+                                <span class="block text-sm font-extrabold text-amber-400">⏳ Pendente (Loja)</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-4 rounded-2xl text-base shadow-lg transition active:scale-[0.98]">
+                    Salvar Entrega
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: GASOLINA -->
+    <div id="modal-gasolina" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-extrabold text-white flex items-center gap-2"><span>⛽</span> Abastecimento / Gasto</h3>
+                <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
+            </div>
+            <form onsubmit="salvarSaida(event, 'gasolina')" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Valor Gasto (R$)</label>
+                    <input type="number" step="0.01" min="0.5" id="gasolina-valor" inputmode="decimal" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-xl px-4 py-3 text-xl font-extrabold text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Descrição</label>
+                    <input type="text" id="gasolina-obs" value="Gasolina" class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Lançar Gasto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SANGRIA -->
+    <div id="modal-sangria" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-extrabold text-white flex items-center gap-2"><span>💸</span> Realizar Sangria</h3>
+                <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
+            </div>
+            <form onsubmit="salvarSaida(event, 'sangria')" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Valor da Retirada (R$)</label>
+                    <input type="number" step="0.01" min="0.5" id="sangria-valor" inputmode="decimal" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-xl font-extrabold text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Motivo / Destino</label>
+                    <input type="text" id="sangria-obs" placeholder="Ex: Guardado em casa" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Confirmar Sangria</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMAÇÃO CUSTOMIZADO -->
+    <div id="modal-confirmacao" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 animate-slide-up shadow-2xl">
+            <h3 id="confirm-titulo" class="text-base font-extrabold text-white">Confirmar ação</h3>
+            <p id="confirm-msg" class="text-xs text-slate-300 leading-relaxed">Tem certeza que deseja continuar?</p>
+            <div class="grid grid-cols-2 gap-2.5 pt-2">
+                <button type="button" onclick="fecharConfirmacao()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs transition">
+                    Cancelar
+                </button>
+                <button type="button" id="confirm-btn-acao" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL COM AS 24 TABELAS OFICIAIS -->
+    <script>
+        const STORAGE_KEY = 'basemoto_dados_v6';
+        const LICENCA_KEY = 'basemoto_licenca_v1';
+        const SENHA_ADMIN_MESTRA = '2026'; // Senha secreta do dono (5 toques na logo da moto)
+        const SEGREDO_HASH = 'BM_ARAPIRACA_2026_PRO';
+
+        let estado = {
+            aberturas: {},
+            movimentacoes: [],
+            pix: { tipo: 'CPF', chave: '', titular: '' },
+            ultimaOrigem: '',
+            ultimaLoja: ''
+        };
+        let filtroAtual = 'todos';
+        let planoAdminSelecionado = 'MENSAL';
+        let contadorToquesAdmin = 0;
+        let timerToquesAdmin = null;
+
+        // ==================== SISTEMA DE LICENCIAMENTO E VENDA ====================
+        function limparTelefone(tel) {
+            return (tel || '').replace(/\D/g, '');
+        }
+
+        function gerarAssinaturaCurta(str) {
+            let h = 2166136261;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 4);
+        }
+
+        // Gera um código vinculado ao WhatsApp do cliente + validade embutida
+        function criarCodigoAtivacao(whatsLimpo, tipoPlano) {
+            if (!whatsLimpo || whatsLimpo.length < 8) return null;
+            let blocoData = 'VITA';
+            if (tipoPlano === 'MENSAL') {
+                const expDate = new Date();
+                expDate.setDate(expDate.getDate() + 30);
+                const yy = String(expDate.getFullYear()).slice(-2);
+                const mm = String(expDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(expDate.getDate()).padStart(2, '0');
+                blocoData = `${yy}${mm}${dd}`;
+            }
+            const assinatura = gerarAssinaturaCurta(`${whatsLimpo}|${blocoData}|${SEGREDO_HASH}`);
+            return `BM-${blocoData}-${assinatura}`;
+        }
+
+        function validarCodigoAtivacao(whatsLimpo, codigoDigitado) {
+            if (!whatsLimpo || !codigoDigitado) return { valido: false, motivo: 'Dados incompletos' };
+            const limpo = codigoDigitado.trim().toUpperCase();
+
+            // Código mestre rápido caso o dono digite BM-DONO-2026
+            if (limpo === 'BM-DONO-2026') {
+                return { valido: true, plano: 'VITALICIO', expiraEm: null };
+            }
+
+            const partes = limpo.split('-');
+            if (partes.length !== 3 || partes[0] !== 'BM') {
+                return { valido: false, motivo: 'Formato inválido' };
+            }
+
+            const blocoData = partes[1];
+            const assinaturaRecebida = partes[2];
+            const assinaturaEsperada = gerarAssinaturaCurta(`${whatsLimpo}|${blocoData}|${SEGREDO_HASH}`);
+
+            if (assinaturaRecebida !== assinaturaEsperada) {
+                return { valido: false, motivo: 'Código não pertence a este WhatsApp' };
+            }
+
+            if (blocoData === 'VITA') {
+                return { valido: true, plano: 'VITALICIO', expiraEm: null };
+            }
+
+            // Valida data AAMMDD
+            if (!/^\d{6}$/.test(blocoData)) {
+                return { valido: false, motivo: 'Data de licença inválida' };
+            }
+
+            const ano = 2000 + parseInt(blocoData.slice(0, 2), 10);
+            const mes = parseInt(blocoData.slice(2, 4), 10) - 1;
+            const dia = parseInt(blocoData.slice(4, 6), 10);
+            const expiraDate = new Date(ano, mes, dia, 23, 59, 59);
+
+            if (new Date() > expiraDate) {
+                return { valido: false, expirada: true, motivo: 'Licença vencida' };
+            }
+
+            return {
+                valido: true,
+                plano: 'MENSAL',
+                expiraEm: `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`
+            };
+        }
+
+        function verificarLicencaSalva() {
+            const tela = document.getElementById('tela-licenca');
+            const avisoExpirada = document.getElementById('aviso-licenca-expirada');
+            try {
+                const salvo = localStorage.getItem(LICENCA_KEY);
+                if (!salvo) {
+                    tela.classList.remove('hidden');
+                    return;
+                }
+                const dadosLic = JSON.parse(salvo);
+                const resultado = validarCodigoAtivacao(dadosLic.whats, dadosLic.codigo);
+
+                if (resultado.valido) {
+                    tela.classList.add('hidden');
+                    atualizarHeaderLicenca(dadosLic.nome, resultado);
+                } else {
+                    document.getElementById('licenca-nome').value = dadosLic.nome || '';
+                    document.getElementById('licenca-whats').value = dadosLic.whats || '';
+                    if (resultado.expirada) avisoExpirada.classList.remove('hidden');
+                    tela.classList.remove('hidden');
+                }
+            } catch (e) {
+                tela.classList.remove('hidden');
+            }
+        }
+
+        function atualizarHeaderLicenca(nome, infoLicenca) {
+            const sub = document.getElementById('subtitulo-usuario-header');
+            const badge = document.getElementById('badge-plano-header');
+            const statusAba = document.getElementById('status-licenca-aba');
+
+            if (nome && sub) {
+                sub.innerText = `Motoboy: ${nome}`;
+            }
+            if (infoLicenca.plano === 'VITALICIO') {
+                if (badge) badge.innerText = 'VIP';
+                if (statusAba) statusAba.innerText = 'Vitalícia ♾️';
+            } else if (infoLicenca.expiraEm) {
+                if (badge) badge.innerText = 'PRO';
+                if (statusAba) statusAba.innerText = `Vence em ${infoLicenca.expiraEm}`;
+            }
+        }
+
+        function ativarLicencaUsuario(e) {
+            e.preventDefault();
+            const nome = document.getElementById('licenca-nome').value.trim();
+            const whats = limparTelefone(document.getElementById('licenca-whats').value);
+            const codigo = document.getElementById('licenca-codigo').value.trim().toUpperCase();
+            const erroEl = document.getElementById('erro-licenca');
+
+            const validacao = validarCodigoAtivacao(whats, codigo);
+            if (!validacao.valido) {
+                erroEl.innerText = validacao.expirada
+                    ? '⚠️ Este código já venceu! Solicite um novo código de renovação.'
+                    : '❌ Código inválido para este número de WhatsApp!';
+                erroEl.classList.remove('hidden');
+                return;
+            }
+
+            erroEl.classList.add('hidden');
+            localStorage.setItem(LICENCA_KEY, JSON.stringify({ nome, whats, codigo }));
+            document.getElementById('tela-licenca').classList.add('hidden');
+            atualizarHeaderLicenca(nome, validacao);
+            mostrarToast(`Bem-vindo ao BaseMoto PRO, ${nome}!`, '🚀');
+        }
+
+        function solicitarChaveNoWhatsApp() {
+            const nome = document.getElementById('licenca-nome').value.trim() || 'Motoboy';
+            const whats = limparTelefone(document.getElementById('licenca-whats').value) || 'meu número';
+            const msg = `Olá! Sou ${nome} (WhatsApp: ${whats}) e quero adquirir minha chave de acesso ao aplicativo *BaseMoto PRO*!`;
+            copiarTextoParaAreaDeTransferencia(msg, 'Pedido copiado! Envie para o administrador no WhatsApp.');
+        }
+
+        // ==================== PAINEL SECRETO DO ADMIN (5 TOQUES NA LOGO) ====================
+        function toqueSecretoAdmin() {
+            contadorToquesAdmin++;
+            if (timerToquesAdmin) clearTimeout(timerToquesAdmin);
+            timerToquesAdmin = setTimeout(() => { contadorToquesAdmin = 0; }, 1800);
+
+            if (contadorToquesAdmin >= 5) {
+                contadorToquesAdmin = 0;
+                document.getElementById('modal-admin').classList.remove('hidden');
+                document.getElementById('admin-login-box').classList.remove('hidden');
+                document.getElementById('admin-painel-box').classList.add('hidden');
+                document.getElementById('admin-senha-input').value = '';
+                document.getElementById('admin-senha-input').focus();
+            }
+        }
+
+        function fecharModalAdmin() {
+            document.getElementById('modal-admin').classList.add('hidden');
+        }
+
+        function autenticarAdmin() {
+            const senha = document.getElementById('admin-senha-input').value.trim();
+            if (senha === SENHA_ADMIN_MESTRA) {
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-painel-box').classList.remove('hidden');
+            } else {
+                mostrarToast('Senha de administrador incorreta!', '🔒');
+            }
+        }
+
+        function selecionarPlanoAdmin(plano) {
+            planoAdminSelecionado = plano;
+            const btnMensal = document.getElementById('btn-plano-mensal');
+            const btnVitalicio = document.getElementById('btn-plano-vitalicio');
+            if (plano === 'MENSAL') {
+                btnMensal.className = "py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-xs transition";
+                btnVitalicio.className = "py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition";
+            } else {
+                btnVitalicio.className = "py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-extrabold text-xs transition";
+                btnMensal.className = "py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition";
+            }
+            gerarCodigoClienteAdmin();
+        }
+
+        function gerarCodigoClienteAdmin() {
+            const whats = limparTelefone(document.getElementById('adm-cliente-whats').value);
+            const display = document.getElementById('adm-codigo-resultado');
+            const cod = criarCodigoAtivacao(whats, planoAdminSelecionado);
+            display.innerText = cod || 'DIGITE O WHATSAPP';
+        }
+
+        function copiarMensagemVendaAdmin() {
+            const nome = document.getElementById('adm-cliente-nome').value.trim() || 'Parceiro';
+            const whats = limparTelefone(document.getElementById('adm-cliente-whats').value);
+            const cod = criarCodigoAtivacao(whats, planoAdminSelecionado);
+            if (!cod) {
+                mostrarToast('Digite o WhatsApp com DDD do cliente!', '⚠️');
+                return;
+            }
+            const descPlano = planoAdminSelecionado === 'MENSAL' ? 'Mensal (30 dias)' : 'Vitalício';
+            const texto = `🏍️ *Acesso Liberado — BaseMoto PRO*\n\nFala, *${nome}*! Aqui está sua chave exclusiva de ativação:\n\n📱 *WhatsApp cadastrado:* ${whats}\n🔑 *Código de Ativação:* ${cod}\n📅 *Plano:* ${descPlano}\n\n*Como instalar no celular:*\n1. Abra o link do app no Safari (iPhone) ou Chrome (Android)\n2. Digite seu nome, seu WhatsApp (${whats}) e o código acima\n3. Adicione à Tela de Início para usar como aplicativo!`;
+            copiarTextoParaAreaDeTransferencia(texto, 'Mensagem de ativação copiada!');
+        }
+
+        function liberarAcessoDonoDireto() {
+            localStorage.setItem(LICENCA_KEY, JSON.stringify({
+                nome: 'Admin BaseMoto',
+                whats: '82999999999',
+                codigo: 'BM-DONO-2026'
+            }));
+            fecharModalAdmin();
+            verificarLicencaSalva();
+            mostrarToast('Seu aparelho foi liberado como Dono Vitalício!', '👑');
+        }
+
+        // ==================== BACKUP E RESTAURAÇÃO DE DADOS ====================
+        function exportarBackupJSON() {
+            const dataStr = JSON.stringify(estado, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `basemoto_backup_${getHojeISO()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            mostrarToast('Arquivo de backup baixado!');
+        }
+
+        function importarBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importado = JSON.parse(e.target.result);
+                    if (importado && Array.isArray(importado.movimentacoes)) {
+                        estado.aberturas = importado.aberturas || {};
+                        estado.movimentacoes = importado.movimentacoes;
+                        estado.pix = importado.pix || estado.pix;
+                        persistirDados();
+                        carregarDados();
+                        atualizarInterface();
+                        mostrarToast('Backup restaurado com sucesso!');
+                    } else {
+                        mostrarToast('Arquivo de backup inválido.', '⚠️');
+                    }
+                } catch (err) {
+                    mostrarToast('Erro ao ler arquivo de backup.', '⚠️');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 24 TABELAS OFICIAIS ENVIADAS PELO USUÁRIO (Valores numéricos e "A Consultar" onde aplicável)
+        const TABELA_PRECOS_RAW = {
+            "Arnon de Melo": { "Alto do Cruzeiro": 9, "Baixa Grande": 10, "Baixão": 12, "Boa Vista": 12, "Brasília": 9, "Batingas": 15, "Brasiliana": 9, "Bom Sucesso": 10, "Canafístula": 11, "Caititus": 9, "Cacimbas": 12, "Canaã": 17, "Cavaco": 10, "Capiatá": 9, "Centro": 10, "Deputado Nezinho": 8, "Eldorado": 10, "Guaribas": 12, "Itapoã": 9, "Jardim de Maria": 9, "Jardim Tropical": 10, "Jardim das Paineiras": 12, "Jardim Esperança": 10, "João Paulo II": 12, "Manoel Teles": 12, "Massaranduba": 10, "Mangabeiras": 10, "Nova Esperança": 11, "Novo Horizonte": 9, "Olho d'Água dos Cajuzinhos": 13, "Ouro Preto": 10, "P. Antônio Lima": 12, "Planalto": 10, "Primavera": 12, "Porto Vitória": 13, "Santa Edwiges": 9, "Santa Esmeralda": 9, "Sonho Verde 1/2": 13, "São Luís 1": 11, "São Luís 2": 11, "S. Arnon de Melo": 8, "S. Nilo Coelho": 12, "S. Teotônio Vilela": 10, "Verdes Campos": 13, "Zélia Barbosa": 13, "Aroeiras": 13, "Agreste": 17, "Alazão": "CONSULTAR", "Altaville": 11, "Araville": 11, "Asa Branca": 15, "Alto do Morro": 12, "Bela Morada": 12, "Brisa do Lago": 15, "Bem Viver": 15, "Campo Belo": 14, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 13, "Cidade Jardim": 15, "Casa Blanca": 15, "Casa das Molas": 15, "Cerejeiras": 12, "Campo Grande": 12, "Colibri": 11, "Divina Luz": "CONSULTAR", "Dona Lourdes": 12, "Felicita": 10, "Fernandes": 20, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 15, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 12, "Jardim das Algarobas": 11, "Jatobá": 12, "Jardins Perucaba 1 e 2": 15, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 13, "JBR": 16, "Lorenzo Bernine": 11, "Metropolitan": 10, "Monte Sinai": 11, "Mestre Nelson": 15, "Ouro Verde": 8, "Riviera": 15, "Reserva Perucaba": 15, "Residencial Espace": 10, "Recanto do Tucano": 12, "Recanto da Boa Vista": 13, "Shopping": 10, "Senhora Aparecida": 14, "San Lorenzo": 15, "Sierra": 9, "Sementeira": 16, "Tucano": 13, "Portinari": 12, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 11, "Pedra Azul": 15, "Pôr do Sol": 16, "Parc Ville": 11, "Val Paraíso": 15, "Vale da Perucaba": 15, "UFAL": 16 },
+            "Alto do Cruzeiro": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 7, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 6, "Cacimbas": 8, "Canaã": 15, "Cavaco": 8, "Capiatá": 6, "Centro": 7, "Eldorado": 7, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 9, "Jardim Esperança": 8, "João Paulo II": 8, "Manoel Teles": 7, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 10, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 6, "Verdes Campos": 9, "Zélia Barbosa": 9, "Agreste": 16, "Aroeiras": 12, "Tucano": 12, "Altaville": 10, "Araville": 10, "Asa Branca": 10, "Alto do Morro": 10, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 12, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 12, "Casa Blanca": 13, "Cerejeiras": 10, "Campo Grande": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 9, "Flor de Maria": 10, "Flor de Ypê": 10, "Frigovale": 12, "Hospital Chama": 10, "Hospital Ágape": 10, "IFAL": 10, "Jatobá": 10, "Jardim das Bromélias": 10, "Jardins Perucaba 1 e 2": 10, "Jardins": 10, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lorenzo Bernine": 8, "Monte Sinai": 10, "Ouro Verde": 9, "Portinari": 10, "Parc Ville": 8, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 12, "Santa Lúcia": 10, "Sierra": 9, "Reserva Perucaba": 10, "Riviera": 10, "Residencial Espace": 9, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 12, "Pôr do Sol": 15, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 15 },
+            "Baixa Grande": { "Alto do Cruzeiro": 8, "Baixa Grande": 7, "Baixão": 7, "Boa Vista": 12, "Brasília": 9, "Batingas": 15, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 10, "Caititus": 8, "Cacimbas": 9, "Canaã": 12, "Cavaco": 7, "Capiatá": 7, "Centro": 8, "Eldorado": 7, "Guaribas": 10, "Itapoã": 10, "Jardim de Maria": 9, "Jardim Tropical": 10, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 10, "Manoel Teles": 8, "Massaranduba": 8, "Mangabeiras": 12, "Nova Esperança": 10, "Novo Horizonte": 9, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 8, "P. Antônio Lima": 9, "Planalto": 8, "Primavera": 9, "Porto Vitória": 10, "Santa Edwiges": 7, "Santa Esmeralda": 9, "Sonho Verde 1/2": 8, "São Luís 1": 9, "São Luís 2": 9, "S. Arnon de Melo": 10, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 8, "Verdes Campos": 10, "Zélia Barbosa": 8, "Agreste": 15, "Aroeiras": 10, "Altaville": 10, "Araville": 10, "Asa Branca": 12, "Bela Morada": 12, "Brisa do Lago": 12, "Bem Viver": 15, "Campo de Tiro": 12, "Campo Grande": 12, "Capim": 20, "Colorado": 9, "Coca Cola": 10, "Casa Blanca": 15, "Cerejeiras": 9, "Divina Luz": 20, "Residencial Espace": 10, "Felicita": 10, "Flor de Maria": 9, "Hospital Chama": 10, "IFAL": 10, "Jardins": 9, "Jardim das Bromélias": 10, "Jatobá": 9, "Jardins Perucaba 1 e 2": 10, "Jardim Europa": 10, "José Ernesto": 10, "JBR": 10, "Lagos do Sul": 10, "Monte Sinai": 12, "Ouro Verde": 10, "Reserva Perucaba": 10, "Riviera": 9, "San Lorenzo": 13, "Sierra": 10, "Shopping": 8, "Senhora Aparecida": 10, "Dona Lourdes": 13, "Pau d'Arco": 25, "Pedra Azul": 13, "Pôr do Sol": 15, "Val Paraíso": 12, "Vale da Perucaba": 13, "UFAL": 14 },
+            "Baixão": { "Alto do Cruzeiro": 8, "Baixa Grande": 7, "Baixão": 6, "Boa Vista": 9, "Brasília": 8, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 8, "Cacimbas": 6, "Canaã": 15, "Cavaco": 6, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 10, "Eldorado": 6, "Guaribas": 9, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 8, "Jardim das Paineiras": 7, "Jardim Esperança": 7, "João Paulo II": 8, "Manoel Teles": 6, "Massaranduba": 8, "Mangabeiras": 12, "Nova Esperança": 9, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 7, "P. Antônio Lima": 6, "Planalto": 8, "Primavera": 7, "Porto Vitória": 10, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 8, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 10, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 7, "Verdes Campos": 9, "Zélia Barbosa": 6, "Aroeiras": 10, "Agreste": 15, "Alazão": "CONSULTAR", "Altaville": 12, "Araville": 12, "Asa Branca": 12, "Alto do Morro": 10, "Bela Morada": 12, "Brisa do Lago": 10, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 10, "Campo Grande": 10, "Colibri": 8, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 12, "Fernandes": 12, "Flor de Maria": 10, "Flor de Ypê": 10, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 12, "IFAL": 12, "Jardim das Bromélias": 12, "Jardim das Algarobas": 8, "Jatobá": 10, "Jardins Perucaba 1 e 2": 8, "Jardins": 10, "José Ernesto": 10, "Jardim Europa": 12, "JBR": 10, "Lorenzo Bernine": 10, "Metropolitan": 10, "Monte Sinai": 13, "Mestre Nelson": 8, "Ouro Verde": 10, "Riviera": 8, "Reserva Perucaba": 8, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 12, "San Lorenzo": 13, "Sierra": 12, "Sementeira": 14, "Tucano": 10, "Portinari": 10, "Palmeira Imperial": 10, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 8, "Pedra Azul": 12, "Pôr do Sol": 14, "Parc Ville": 10, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 14 },
+            "Bosque das Arapiracas": { "Alto do Cruzeiro": 6, "Baixa Grande": 7, "Baixão": 6, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 8, "Caititus": 6, "Cacimbas": 7, "Canaã": 15, "Cavaco": 7, "Capiatá": 6, "Centro": 6, "Eldorado": 6, "Guaribas": 9, "Itapoã": 6, "Jardim de Maria": 6, "Jardim Tropical": 7, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 8, "Manoel Teles": 6, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 6, "P. Antônio Lima": 7, "Planalto": 8, "Primavera": 7, "Porto Vitória": 10, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 9, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 6, "Verdes Campos": 9, "Zélia Barbosa": 8, "Agreste": 16, "Aroeiras": 10, "Tucano": 10, "Altaville": 9, "Araville": 9, "Asa Branca": 10, "Alto do Morro": 10, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 10, "Bem Viver": 11, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 10, "Casa Blanca": 12, "Cerejeiras": 9, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 9, "Flor de Maria": 10, "Flor de Ypê": 10, "Hospital Chama": 9, "IFAL": 9, "Jardim das Bromélias": 10, "Jatobá": 9, "Jardins Perucaba 1 e 2": 9, "Jardins": 10, "Jardim Europa": 9, "José Ernesto": 10, "JBR": 10, "Lorenzo Bernine": 8, "Monte Sinai": 10, "Ouro Verde": 9, "Reserva Perucaba": 9, "Residencial Espace": 7, "Recanto da Boa Vista": 10, "Shopping": 8, "Senhora Aparecida": 12, "San Lorenzo": 11, "Sierra": 10, "Portinari": 9, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 11, "Pôr do Sol": 14, "Val Paraíso": 12, "Vale da Perucaba": 10, "UFAL": 14 },
+            "Brasília": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 7, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 8, "Caititus": 6, "Cacimbas": 7, "Canaã": 15, "Cavaco": 8, "Capiatá": 6, "Centro": 6, "Eldorado": 7, "Guaribas": 9, "Itapoã": 6, "Jardim de Maria": 7, "Jardim Tropical": 6, "Jardim das Paineiras": 9, "Jardim Esperança": 9, "João Paulo II": 8, "Manoel Teles": 7, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 7, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 6, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 7, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 10, "São Luís 1": 6, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 6, "Verdes Campos": 8, "Zélia Barbosa": 9, "Agreste": 18, "Aroeiras": 12, "Tucano": 12, "Altaville": 9, "Araville": 9, "Asa Branca": 10, "Alto do Morro": 12, "Alazão": "CONSULTAR", "Bela Morada": 9, "Brisa do Lago": 12, "Bem Viver": 12, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 12, "Casa Blanca": 13, "Cerejeiras": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Flor de Maria": 10, "Flor de Ypê": 10, "Hospital Chama": 9, "IFAL": 9, "Jardim das Bromélias": 11, "Jatobá": 10, "Jardins Perucaba 1 e 2": 10, "Jardins": 10, "Jardim Europa": 9, "José Ernesto": 10, "JBR": 13, "Lorenzo Bernine": 8, "Monte Sinai": 10, "Ouro Verde": 9, "Reserva Perucaba": 10, "Residencial Espace": 8, "Recanto da Boa Vista": 10, "Shopping": 8, "Senhora Aparecida": 12, "San Lorenzo": 10, "Sierra": 9, "Portinari": 9, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 11, "Pôr do Sol": 15, "Val Paraíso": 13, "Vale da Perucaba": 13, "UFAL": 14 },
+            "Brasiliana": { "Alto do Cruzeiro": 6, "Baixa Grande": 6, "Baixão": 7, "Boa Vista": 10, "Brasília": 7, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 10, "Caititus": 6, "Cacimbas": 8, "Deputado Nezinho": 8, "Canaã": 15, "Cavaco": 7, "Capiatá": 6, "Centro": 7, "Eldorado": 6, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 6, "Jardim Tropical": 8, "Jardim das Paineiras": 8, "Jardim Esperança": 7, "João Paulo II": 8, "Manoel Teles": 7, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 9, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 8, "Porto Vitória": 11, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 10, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 6, "Verdes Campos": 9, "Zélia Barbosa": 8, "Aroeiras": 10, "Agreste": 15, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 12, "Asa Branca": 12, "Alto do Morro": 10, "Bela Morada": 11, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 10, "Campo Grande": 10, "Colibri": 8, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 15, "Flor de Maria": 10, "Flor de Ypê": 10, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 11, "Jardim das Algarobas": 8, "Jatobá": 10, "Jardins Perucaba 1 e 2": 10, "Jardins": 10, "Jardim Europa": 12, "José Ernesto": 10, "JBR": 10, "Lorenzo Bernine": 9, "Metropolitan": 10, "Monte Sinai": 11, "Mestre Nelson": 10, "Ouro Verde": 10, "Riviera": 10, "Reserva Perucaba": 10, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 12, "Shopping": 10, "Senhora Aparecida": 10, "San Lorenzo": 13, "Sierra": 10, "Sementeira": 15, "Tucano": 10, "Portinari": 11, "Palmeira Imperial": 12, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 8, "Pedra Azul": 12, "Pôr do Sol": 14, "Parc Ville": 9, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 14 },
+            "Cacimbas": { "Alto do Cruzeiro": 8, "Baixa Grande": 8, "Baixão": 6, "Boa Vista": 9, "Brasília": 8, "Batingas": 13, "Brasiliana": 8, "Bom Sucesso": 9, "Canafístula": 9, "Caititus": 8, "Cacimbas": 6, "Canaã": 15, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 10, "Eldorado": 7, "Guaribas": 9, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 8, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 7, "Manoel Teles": 6, "Massaranduba": 9, "Mangabeiras": 12, "Nova Esperança": 8, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 7, "Ouro Preto": 6, "P. Antônio Lima": 6, "Planalto": 9, "Primavera": 6, "Porto Vitória": 10, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 10, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 10, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 8, "Verdes Campos": 8, "Zélia Barbosa": 7, "Aroeiras": 12, "Agreste": 16, "Alazão": "CONSULTAR", "Altaville": 11, "Araville": 13, "Asa Branca": 10, "Alto do Morro": 11, "Bela Morada": 10, "Brisa do Lago": 9, "Bem Viver": 11, "Campo Belo": 9, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 11, "Cidade Jardim": 11, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 11, "Campo Grande": 10, "Colibri": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 11, "Fernandes": 15, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 10, "Hospital Ágape": 11, "Hospital Chama": 11, "IFAL": 11, "Jardim das Bromélias": 10, "Jardim das Algarobas": 10, "Jatobá": 11, "Jardins Perucaba 1 e 2": 9, "Jardins": 12, "Jardim Europa": 12, "José Ernesto": 12, "JBR": 10, "Lorenzo Bernine": 8, "Metropolitan": 9, "Monte Sinai": 13, "Mestre Nelson": 10, "Ouro Verde": 11, "Riviera": 9, "Reserva Perucaba": 9, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Sierra": 12, "Sementeira": 16, "Tucano": 12, "Portinari": 10, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 10, "Pedra Azul": 11, "Pôr do Sol": 16, "Parc Ville": 8, "Val Paraíso": 13, "Vale da Perucaba": 10, "UFAL": 16 },
+            "Caititus": { "Alto do Cruzeiro": 6, "Baixa Grande": 7, "Baixão": 7, "Boa Vista": 9, "Brasília": 7, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 6, "Cacimbas": 8, "Canaã": 15, "Cavaco": 7, "Capiatá": 6, "Centro": 7, "Deputado Nezinho": 8, "Eldorado": 7, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 6, "Jardim Tropical": 8, "Jardim das Paineiras": 9, "Jardim Esperança": 8, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 9, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 8, "Porto Vitória": 11, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 10, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 6, "Verdes Campos": 9, "Zélia Barbosa": 9, "Aroeiras": 10, "Agreste": 15, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 12, "Asa Branca": 12, "Alto do Morro": 10, "Bela Morada": 11, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 10, "Campo Grande": 10, "Colibri": 8, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 15, "Flor de Maria": 10, "Flor de Ypê": 10, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 11, "Jardim das Algarobas": 8, "Jatobá": 10, "Jardins Perucaba 1 e 2": 10, "Jardins": 10, "Jardim Europa": 12, "José Ernesto": 10, "JBR": 12, "Lorenzo Bernine": 9, "Metropolitan": 10, "Monte Sinai": 11, "Mestre Nelson": 12, "Ouro Verde": 10, "Riviera": 10, "Reserva Perucaba": 12, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 10, "San Lorenzo": 13, "Sierra": 10, "Sementeira": 15, "Tucano": 10, "Portinari": 10, "Palmeira Imperial": 12, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 8, "Pedra Azul": 12, "Pôr do Sol": 14, "Parc Ville": 9, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 14 },
+            "Canafístula": { "Alto do Cruzeiro": 9, "Baixa Grande": 12, "Baixão": 9, "Boa Vista": 9, "Brasília": 9, "Batingas": 15, "Brasiliana": 10, "Bom Sucesso": 12, "Canafístula": 8, "Caititus": 9, "Cacimbas": 10, "Canaã": 17, "Cavaco": 12, "Capiatá": 9, "Centro": 9, "Eldorado": 10, "Guaribas": 9, "Itapoã": 9, "Jardim de Maria": 9, "Jardim Tropical": 8, "Jardim das Paineiras": 15, "Jardim Esperança": 12, "João Paulo II": 10, "Manoel Teles": 9, "Massaranduba": 12, "Mangabeiras": 15, "Nova Esperança": 8, "Novo Horizonte": 10, "Olho d'Água dos Cajuzinhos": 12, "Ouro Preto": 8, "P. Antônio Lima": 10, "Planalto": 12, "Primavera": 10, "Porto Vitória": 15, "Santa Edwiges": 10, "Santa Esmeralda": 10, "Sonho Verde 1/2": 15, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 10, "S. Nilo Coelho": 15, "S. Teotônio Vilela": 9, "Verdes Campos": 9, "Zélia Barbosa": 15, "Agreste": 20, "Aroeiras": 15, "Altaville": 8, "Araville": 8, "Asa Branca": 10, "Bela Morada": 9, "Brisa do Lago": 15, "Bem Viver": 12, "Campo de Tiro": 10, "Campo Grande": 10, "Capim": 25, "Colorado": 15, "Coca Cola": 12, "Casa Blanca": 12, "Cerejeiras": 14, "Divina Luz": 15, "Residencial Espace": 12, "Felicita": 12, "Flor de Maria": 15, "Hospital Chama": 10, "IFAL": 10, "Jardins": 15, "Jardim das Bromélias": 15, "Jatobá": 14, "Jardins Perucaba 1 e 2": 15, "Jardim Europa": 10, "José Ernesto": 15, "JBR": 16, "Lagos do Sul": 13, "Monte Sinai": 12, "Ouro Verde": 10, "Reserva Perucaba": 15, "Riviera": 15, "San Lorenzo": 12, "Sierra": 10, "Shopping": 10, "Senhora Aparecida": 15, "Dona Lourdes": 10, "Pau d'Arco": 25, "Pedra Azul": 15, "Pôr do Sol": 20, "Val Paraíso": 17, "Vale da Perucaba": 16, "UFAL": 18 },
+            "Capiatá": { "Alto do Cruzeiro": 6, "Baixa Grande": 7, "Baixão": 6, "Boa Vista": 8, "Brasília": 6, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 8, "Caititus": 6, "Cacimbas": 7, "Canaã": 13, "Cavaco": 7, "Capiatá": 5, "Centro": 6, "Eldorado": 6, "Guaribas": 8, "Itapoã": 6, "Jardim de Maria": 6, "Jardim Tropical": 7, "Jardim das Paineiras": 8, "Jardim Esperança": 7, "João Paulo II": 8, "Manoel Teles": 6, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 7, "Ouro Preto": 6, "P. Antônio Lima": 7, "Planalto": 8, "Primavera": 7, "Porto Vitória": 10, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 9, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 6, "Verdes Campos": 8, "Zélia Barbosa": 7, "Agreste": 15, "Aroeiras": 10, "Altaville": 9, "Araville": 9, "Asa Branca": 9, "Alto do Morro": 10, "Bela Morada": 9, "Brisa do Lago": 9, "Bem Viver": 10, "Campo de Tiro": 10, "Campo Grande": 9, "Capim": 20, "Colorado": 10, "Coca Cola": 9, "Casa Blanca": 12, "Cerejeiras": 9, "Divina Luz": 15, "Dona Lourdes": 9, "Felicita": 10, "Flor de Maria": 10, "Hospital Chama": 9, "IFAL": 9, "Jardim das Bromélias": 9, "Jatobá": 9, "Jardins Perucaba 1 e 2": 8, "Jardins": 10, "Jardim Europa": 8, "José Ernesto": 11, "JBR": 10, "Lagos do Sul": 8, "Monte Sinai": 10, "Ouro Verde": 8, "Reserva Perucaba": 8, "Riviera": 8, "Residencial Espace": 7, "Sierra": 9, "Recanto da Boa Vista": 10, "San Lorenzo": 10, "Pau d'Arco": 25, "Pedra Azul": 10, "Pôr do Sol": 14, "Val Paraíso": 13, "Vale da Perucaba": 10, "Shopping": 8, "Senhora Aparecida": 12, "UFAL": 14 },
+            "Centro": { "Alto do Cruzeiro": 6, "Baixa Grande": 7, "Baixão": 6, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 6, "Cacimbas": 6, "Canaã": 15, "Cavaco": 7, "Capiatá": 6, "Centro": 6, "Deputado Nezinho": 8, "Eldorado": 6, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 7, "Manoel Teles": 6, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 7, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 6, "P. Antônio Lima": 7, "Planalto": 8, "Primavera": 6, "Porto Vitória": 10, "Santa Edwiges": 7, "Santa Esmeralda": 7, "Sonho Verde 1/2": 9, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 6, "Verdes Campos": 8, "Zélia Barbosa": 8, "Aroeiras": 10, "Agreste": 15, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 12, "Asa Branca": 10, "Alto do Morro": 10, "Bela Morada": 10, "Brisa do Lago": 10, "Bem Viver": 10, "Campo Belo": 9, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 10, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 10, "Campo Grande": 10, "Colibri": 9, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 15, "Flor de Maria": 10, "Flor de Ypê": 10, "Furnas": "CONSULTAR", "Golden Ville": 10, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 10, "Jardim das Algarobas": 9, "Jatobá": 10, "Jardins Perucaba 1 e 2": 9, "Jardins": 10, "Jardim Europa": 10, "José Ernesto": 10, "JBR": 10, "Lorenzo Bernine": 8, "Metropolitan": 8, "Monte Sinai": 10, "Mestre Nelson": 10, "Ouro Verde": 9, "Riviera": 9, "Reserva Perucaba": 9, "Residencial Espace": 8, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 8, "Senhora Aparecida": 12, "San Lorenzo": 13, "Sierra": 10, "Sementeira": 14, "Tucano": 10, "Portinari": 10, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 9, "Pedra Azul": 11, "Pôr do Sol": 14, "Parc Ville": 8, "Val Paraíso": 12, "Vale da Perucaba": 10, "UFAL": 14 },
+            "Eldorado": { "Alto do Cruzeiro": 7, "Baixa Grande": 6, "Baixão": 6, "Boa Vista": 9, "Brasília": 7, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 7, "Cacimbas": 6, "Canaã": 13, "Cavaco": 6, "Capiatá": 6, "Centro": 6, "Eldorado": 5, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 8, "Jardim Esperança": 7, "João Paulo II": 8, "Manoel Teles": 5, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 6, "P. Antônio Lima": 7, "Planalto": 8, "Primavera": 7, "Porto Vitória": 10, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 9, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 6, "Verdes Campos": 8, "Zélia Barbosa": 7, "Agreste": 15, "Aroeiras": 10, "Altaville": 10, "Araville": 10, "Asa Branca": 10, "Alto do Morro": 10, "Bela Morada": 10, "Brisa do Lago": 10, "Bem Viver": 10, "Campo de Tiro": 10, "Campo Grande": 10, "Capim": 20, "Colorado": 10, "Coca Cola": 10, "Casa Blanca": 12, "Cerejeiras": 9, "Divina Luz": 17, "Dona Lourdes": 10, "Felicita": 10, "Flor de Maria": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 9, "Jatobá": 10, "Jardins Perucaba 1 e 2": 8, "Jardins": 10, "Jardim Europa": 10, "José Ernesto": 10, "JBR": 10, "Lagos do Sul": 8, "Monte Sinai": 10, "Ouro Verde": 8, "Reserva Perucaba": 8, "Riviera": 8, "Residencial Espace": 7, "Sierra": 9, "Recanto da Boa Vista": 10, "San Lorenzo": 11, "Pau d'Arco": 25, "Pedra Azul": 10, "Pôr do Sol": 14, "Val Paraíso": 13, "Vale da Perucaba": 10, "Shopping": 8, "Senhora Aparecida": 12, "UFAL": 14 },
+            "Frango Favorito": { "Alto do Cruzeiro": 8, "Baixa Grande": 10, "Baixão": 8, "Boa Vista": 12, "Brasília": 8, "Batingas": 15, "Brasiliana": 8, "Bom Sucesso": 10, "Canafístula": 10, "Caititus": 8, "Cacimbas": 8, "Canaã": 15, "Cavaco": 10, "Capiatá": 8, "Centro": 8, "Eldorado": 8, "Guaribas": 10, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 8, "Jardim das Paineiras": 10, "Jardim Esperança": 10, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 10, "Mangabeiras": 12, "Nova Esperança": 9, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 8, "P. Antônio Lima": 9, "Planalto": 10, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 11, "São Luís 1": 9, "São Luís 2": 9, "S. Arnon de Melo": 10, "S. Nilo Coelho": 10, "S. Teotônio Vilela": 8, "Verdes Campos": 10, "Zélia Barbosa": 10, "Agreste": 18, "Aroeiras": 12, "Altaville": 11, "Araville": 11, "Asa Branca": 11, "Alto do Morro": 13, "Alazão": "CONSULTAR", "Bela Morada": 12, "Brisa do Lago": 12, "Bem Viver": 12, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 13, "Coca Cola": 11, "Casa Blanca": 15, "Cerejeiras": 12, "Divina Luz": "CONSULTAR", "Dona Lourdes": 11, "Felicita": 11, "Flor de Maria": 13, "Hospital Chama": 11, "IFAL": 11, "Jardim das Bromélias": 12, "Jatobá": 12, "Jardins Perucaba 1 e 2": 12, "Jardins": 13, "Jardim Europa": 11, "José Ernesto": 13, "JBR": 13, "Lagos do Sul": 11, "Monte Sinai": 13, "Ouro Verde": 12, "Reserva Perucaba": 12, "Riviera": 12, "Residencial Espace": 12, "Sierra": 12, "Recanto da Boa Vista": 13, "San Lorenzo": 13, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 13, "Pôr do Sol": 17, "Val Paraíso": 16, "Vale da Perucaba": 13, "Shopping": 10, "Senhora Aparecida": 15, "UFAL": 15 },
+            "Glam São Luís": { "Alto do Cruzeiro": 7, "Baixa Grande": 9, "Baixão": 8, "Boa Vista": 8, "Brasília": 7, "Batingas": 12, "Brasiliana": 8, "Bom Sucesso": 10, "Canafístula": 8, "Caititus": 7, "Cacimbas": 7, "Canaã": 15, "Cavaco": 9, "Capiatá": 8, "Centro": 7, "Eldorado": 8, "Guaribas": 7, "Itapoã": 8, "Jardim de Maria": 9, "Jardim Tropical": 7, "Jardim das Paineiras": 10, "Jardim Esperança": 10, "João Paulo II": 7, "Manoel Teles": 8, "Massaranduba": 10, "Mangabeiras": 12, "Nova Esperança": 7, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 10, "Primavera": 7, "Porto Vitória": 12, "Santa Edwiges": 8, "Santa Esmeralda": 10, "Sonho Verde 1/2": 12, "São Luís 1": 6, "São Luís 2": 6, "S. Arnon de Melo": 9, "S. Nilo Coelho": 10, "S. Teotônio Vilela": 8, "Verdes Campos": 7, "Zélia Barbosa": 10, "Agreste": 18, "Aroeiras": 13, "Altaville": 10, "Araville": 10, "Asa Branca": 9, "Bela Morada": 9, "Brisa do Lago": 12, "Bem Viver": 10, "Campo de Tiro": 12, "Campo Grande": 9, "Capim": 25, "Colorado": 13, "Coca Cola": 8, "Casa Blanca": 12, "Cerejeiras": 12, "Divina Luz": 20, "Residencial Espace": 8, "Felicita": 10, "Flor de Maria": 12, "Hospital Chama": 9, "IFAL": 9, "Jardins": 12, "Jardim das Bromélias": 12, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lagos do Sul": 9, "Monte Sinai": 12, "Ouro Verde": 10, "Reserva Perucaba": 10, "Riviera": 10, "San Lorenzo": 10, "Sierra": 10, "Shopping": 10, "Senhora Aparecida": 14, "Dona Lourdes": 8, "Pau d'Arco": 20, "Pedra Azul": 10, "Pôr do Sol": 17, "Val Paraíso": 15, "Vale da Perucaba": 12, "UFAL": 16 },
+            "Itapoã": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 8, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 9, "Canafístula": 9, "Caititus": 7, "Cacimbas": 8, "Canaã": 16, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 8, "Eldorado": 8, "Guaribas": 10, "Itapoã": 6, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 9, "Jardim Esperança": 9, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 9, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 9, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 11, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 7, "Verdes Campos": 9, "Zélia Barbosa": 9, "Aroeiras": 12, "Agreste": 17, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 11, "Asa Branca": 12, "Alto do Morro": 12, "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 11, "Campo Grande": 12, "Colibri": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 18, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 12, "Jardim das Algarobas": 10, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lorenzo Bernine": 10, "Metropolitan": 8, "Monte Sinai": 11, "Mestre Nelson": 12, "Ouro Verde": 9, "Riviera": 10, "Reserva Perucaba": 10, "Residencial Espace": 10, "Recanto do Tucano": 11, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Sierra": 9, "Sementeira": 15, "Tucano": 12, "Portinari": 11, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 10, "Pedra Azul": 12, "Pôr do Sol": 15, "Parc Ville": 10, "Val Paraíso": 13, "Vale da Perucaba": 10, "UFAL": 15 },
+            "Jardim Esperança": { "Alto do Cruzeiro": 8, "Baixa Grande": 7, "Baixão": 7, "Boa Vista": 12, "Brasília": 9, "Batingas": 15, "Brasiliana": 7, "Bom Sucesso": 8, "Canafístula": 10, "Caititus": 8, "Cacimbas": 9, "Canaã": 12, "Cavaco": 7, "Capiatá": 7, "Centro": 8, "Eldorado": 7, "Guaribas": 10, "Itapoã": 10, "Jardim de Maria": 9, "Jardim Tropical": 10, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 10, "Manoel Teles": 8, "Massaranduba": 8, "Mangabeiras": 12, "Nova Esperança": 10, "Novo Horizonte": 9, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 9, "P. Antônio Lima": 10, "Planalto": 8, "Primavera": 9, "Porto Vitória": 10, "Santa Edwiges": 8, "Santa Esmeralda": 9, "Sonho Verde 1/2": 8, "São Luís 1": 10, "São Luís 2": 10, "S. Arnon de Melo": 9, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 8, "Verdes Campos": 10, "Zélia Barbosa": 8, "Agreste": 15, "Aroeiras": 10, "Altaville": 10, "Araville": 10, "Asa Branca": 12, "Bela Morada": 12, "Brisa do Lago": 12, "Bem Viver": 15, "Campo de Tiro": 12, "Campo Grande": 12, "Capim": 20, "Colorado": 10, "Coca Cola": 12, "Casa Blanca": 12, "Cerejeiras": 10, "Divina Luz": 20, "Residencial Espace": 10, "Felicita": 10, "Flor de Maria": 10, "IFAL": 10, "Jardins": 10, "Jardim das Bromélias": 10, "Jatobá": 10, "Jardins Perucaba 1 e 2": 10, "Jardim Europa": 10, "José Ernesto": 10, "JBR": 12, "Lagos do Sul": 10, "Monte Sinai": 12, "Ouro Verde": 10, "Reserva Perucaba": 10, "Riviera": 10, "San Lorenzo": 14, "Sierra": 10, "Shopping": 8, "Senhora Aparecida": 12, "Dona Lourdes": 13, "Pau d'Arco": 25, "Pedra Azul": 12, "Pôr do Sol": 14, "Val Paraíso": 13, "Vale da Perucaba": 14, "UFAL": 15 },
+            "Jardim Tropical": { "Alto do Cruzeiro": 7, "Baixa Grande": 9, "Baixão": 8, "Boa Vista": 9, "Brasília": 7, "Batingas": 13, "Brasiliana": 8, "Bom Sucesso": 10, "Canafístula": 8, "Caititus": 7, "Cacimbas": 8, "Canaã": 17, "Cavaco": 9, "Capiatá": 8, "Centro": 7, "Eldorado": 8, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 8, "Jardim Tropical": 6, "Jardim das Paineiras": 10, "Jardim Esperança": 10, "João Paulo II": 8, "Manoel Teles": 8, "Massaranduba": 10, "Mangabeiras": 12, "Nova Esperança": 7, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 10, "Primavera": 8, "Porto Vitória": 13, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 12, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 9, "S. Nilo Coelho": 10, "S. Teotônio Vilela": 8, "Verdes Campos": 8, "Zélia Barbosa": 10, "Agreste": 17, "Aroeiras": 13, "Tucano": 13, "Altaville": 10, "Araville": 10, "Asa Branca": 10, "Alto do Morro": 12, "Alazão": "CONSULTAR", "Bela Morada": 9, "Brisa do Lago": 12, "Bem Viver": 11, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 11, "Casa Blanca": 12, "Cerejeiras": 12, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Flor de Maria": 12, "Flor de Ypê": 12, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 12, "Jatobá": 12, "Jardins Perucaba 1 e 2": 11, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 15, "Lorenzo Bernine": 8, "Monte Sinai": 10, "Ouro Verde": 10, "Reserva Perucaba": 11, "Residencial Espace": 8, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 11, "Sierra": 10, "Portinari": 9, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 11, "Pôr do Sol": 16, "Val Paraíso": 15, "Vale da Perucaba": 13, "UFAL": 16 },
+            "João Paulo II": { "Alto do Cruzeiro": 9, "Baixa Grande": 10, "Baixão": 8, "Boa Vista": 9, "Brasília": 9, "Batingas": 13, "Brasiliana": 9, "Bom Sucesso": 11, "Canafístula": 10, "Caititus": 9, "Cacimbas": 8, "Canaã": 17, "Cavaco": 9, "Capiatá": 8, "Centro": 8, "Eldorado": 8, "Guaribas": 8, "Itapoã": 10, "Jardim de Maria": 10, "Jardim Tropical": 10, "Jardim das Paineiras": 9, "Jardim Esperança": 11, "João Paulo II": 7, "Manoel Teles": 8, "Massaranduba": 11, "Mangabeiras": 14, "Nova Esperança": 8, "Novo Horizonte": 10, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 11, "Primavera": 7, "Porto Vitória": 12, "Santa Edwiges": 9, "Santa Esmeralda": 10, "Sonho Verde 1/2": 10, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 10, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 8, "Verdes Campos": 8, "Zélia Barbosa": 9, "Agreste": 18, "Aroeiras": 13, "Altaville": 10, "Araville": 10, "Asa Branca": 9, "Bela Morada": 11, "Brisa do Lago": 10, "Bem Viver": 10, "Campo de Tiro": 12, "Campo Grande": 9, "Capim": 25, "Colorado": 13, "Coca Cola": 9, "Casa Blanca": 13, "Cerejeiras": 12, "Divina Luz": 20, "Residencial Espace": 10, "Felicita": 12, "Flor de Maria": 12, "Hospital Chama": 10, "IFAL": 10, "Jardins": 12, "Jardim das Bromélias": 12, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardim Europa": 12, "José Ernesto": 13, "JBR": 12, "Lagos do Sul": 8, "Monte Sinai": 12, "Ouro Verde": 12, "Reserva Perucaba": 10, "Riviera": 12, "San Lorenzo": 10, "Sierra": 12, "Shopping": 10, "Senhora Aparecida": 14, "Dona Lourdes": 8, "Pau d'Arco": 20, "Pedra Azul": 10, "Pôr do Sol": 17, "Val Paraíso": 15, "Vale da Perucaba": 10, "UFAL": 17 },
+            "Novo Horizonte": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 8, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 9, "Canafístula": 9, "Caititus": 7, "Cacimbas": 8, "Canaã": 16, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 8, "Eldorado": 8, "Guaribas": 10, "Itapoã": 6, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 9, "Jardim Esperança": 9, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 9, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 9, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 11, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 7, "Verdes Campos": 9, "Zélia Barbosa": 9, "Aroeiras": 12, "Agreste": 17, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 11, "Asa Branca": 12, "Alto do Morro": 12, "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 11, "Campo Grande": 12, "Colibri": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 18, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 12, "Jardim das Algarobas": 10, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lorenzo Bernine": 10, "Metropolitan": 8, "Monte Sinai": 11, "Mestre Nelson": 12, "Ouro Verde": 9, "Riviera": 10, "Reserva Perucaba": 10, "Residencial Espace": 10, "Recanto do Tucano": 11, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Sierra": 9, "Sementeira": 15, "Tucano": 12, "Portinari": 11, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 10, "Pedra Azul": 12, "Pôr do Sol": 15, "Parc Ville": 10, "Val Paraíso": 13, "Vale da Perucaba": 10, "UFAL": 15 },
+            "Ouro Preto": { "Alto do Cruzeiro": 8, "Baixa Grande": 8, "Baixão": 7, "Boa Vista": 8, "Brasília": 7, "Batingas": 13, "Brasiliana": 8, "Bom Sucesso": 10, "Canafístula": 8, "Caititus": 8, "Cacimbas": 6, "Canaã": 17, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 10, "Eldorado": 8, "Guaribas": 8, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 7, "Jardim das Paineiras": 9, "Jardim Esperança": 9, "João Paulo II": 7, "Manoel Teles": 7, "Massaranduba": 10, "Mangabeiras": 12, "Nova Esperança": 7, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 8, "Ouro Preto": 6, "P. Antônio Lima": 7, "Planalto": 10, "Primavera": 6, "Porto Vitória": 12, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 10, "São Luís 1": 6, "São Luís 2": 6, "S. Arnon de Melo": 10, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 7, "Verdes Campos": 7, "Zélia Barbosa": 8, "Aroeiras": 12, "Agreste": 17, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 11, "Asa Branca": 10, "Alto do Morro": 12, "Bela Morada": 10, "Brisa do Lago": 10, "Bem Viver": 12, "Campo Belo": 8, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 10, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 12, "Campo Grande": 10, "Colibri": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 12, "Fernandes": 15, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 12, "Hospital Chama": 12, "IFAL": 10, "Jardim das Bromélias": 13, "Jardim das Algarobas": 10, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardins": 12, "José Ernesto": 12, "Jardim Europa": 12, "JBR": 12, "Lorenzo Bernine": 8, "Metropolitan": 10, "Monte Sinai": 12, "Mestre Nelson": 12, "Ouro Verde": 10, "Riviera": 10, "Reserva Perucaba": 10, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Sierra": 12, "Sementeira": 16, "Tucano": 12, "Portinari": 10, "Palmeira Imperial": 13, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 10, "Pedra Azul": 10, "Pôr do Sol": 16, "Parc Ville": 8, "Val Paraíso": 16, "Vale da Perucaba": 12, "UFAL": 14 },
+            "Planalto / Massaranduba": { "Alto do Cruzeiro": 10, "Baixa Grande": 9, "Baixão": 10, "Boa Vista": 15, "Brasília": 10, "Batingas": 18, "Brasiliana": 10, "Bom Sucesso": 8, "Canafístula": 15, "Caititus": 10, "Cacimbas": 12, "Canaã": 15, "Cavaco": 9, "Capiatá": 9, "Centro": 10, "Eldorado": 9, "Guaribas": 13, "Itapoã": 10, "Jardim de Maria": 10, "Jardim Tropical": 12, "Jardim das Paineiras": 10, "Jardim Esperança": 9, "João Paulo II": 15, "Manoel Teles": 12, "Massaranduba": 8, "Mangabeiras": 13, "Nova Esperança": 15, "Novo Horizonte": 10, "Olho d'Água dos Cajuzinhos": 13, "Ouro Preto": 12, "P. Antônio Lima": 12, "Planalto": 8, "Primavera": 12, "Porto Vitória": 12, "Santa Edwiges": 9, "Santa Esmeralda": 10, "Sonho Verde 1/2": 10, "São Luís 1": 13, "São Luís 2": 13, "S. Arnon de Melo": 12, "S. Nilo Coelho": 10, "S. Teotônio Vilela": 10, "Verdes Campos": 15, "Zélia Barbosa": 10, "Agreste": 15, "Aroeiras": 10, "Tucano": 10, "Altaville": 15, "Araville": 15, "Asa Branca": 17, "Alto do Morro": 10, "Alazão": "CONSULTAR", "Bela Morada": 16, "Brisa do Lago": 15, "Bem Viver": 18, "Campo de Tiro": 18, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 18, "Casa Blanca": 18, "Cerejeiras": 9, "Divina Luz": "CONSULTAR", "Dona Lourdes": 14, "Felicita": 13, "Flor de Maria": 10, "Flor de Ypê": 10, "Hospital Chama": 15, "IFAL": 15, "Jardim das Bromélias": 10, "Jatobá": 10, "Jardins Perucaba 1 e 2": 13, "Jardins": 13, "Jardim Europa": 15, "José Ernesto": 12, "JBR": 15, "Lorenzo Bernine": 15, "Monte Sinai": 16, "Ouro Verde": 12, "Reserva Perucaba": 13, "Residencial Espace": 12, "Recanto da Boa Vista": 16, "Shopping": 10, "Senhora Aparecida": 10, "San Lorenzo": 17, "Sierra": 13, "Portinari": 15, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 17, "Pôr do Sol": 14, "Val Paraíso": 13, "Vale da Perucaba": 15, "UFAL": 14 },
+            "Primavera": { "Alto do Cruzeiro": 7, "Baixa Grande": 8, "Baixão": 6, "Boa Vista": 9, "Brasília": 7, "Batingas": 13, "Brasiliana": 8, "Bom Sucesso": 9, "Canafístula": 8, "Caititus": 7, "Cacimbas": 6, "Canaã": 15, "Cavaco": 8, "Capiatá": 7, "Centro": 6, "Eldorado": 7, "Guaribas": 8, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 7, "Jardim das Paineiras": 8, "Jardim Esperança": 9, "João Paulo II": 7, "Manoel Teles": 6, "Massaranduba": 9, "Mangabeiras": 12, "Nova Esperança": 7, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 7, "Ouro Preto": 6, "P. Antônio Lima": 6, "Planalto": 9, "Primavera": 6, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 8, "Sonho Verde 1/2": 9, "São Luís 1": 6, "São Luís 2": 6, "S. Arnon de Melo": 9, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 7, "Verdes Campos": 8, "Zélia Barbosa": 8, "Agreste": 17, "Aroeiras": 12, "Tucano": 12, "Altaville": 10, "Araville": 10, "Asa Branca": 9, "Alto do Morro": 12, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 9, "Bem Viver": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 10, "Casa Blanca": 13, "Cerejeiras": 10, "Campo Grande": 9, "Divina Luz": "CONSULTAR", "Dona Lourdes": 9, "Felicita": 10, "Flor de Maria": 12, "Flor de Ypê": 12, "Frigovale": 9, "Hospital Chama": 10, "Hospital Ágape": 10, "IFAL": 10, "Jatobá": 12, "Jardim das Bromélias": 12, "Jardins Perucaba 1 e 2": 9, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 10, "Lorenzo Bernine": 7, "Monte Sinai": 12, "Ouro Verde": 10, "Reserva Perucaba": 9, "Riviera": 9, "Residencial Espace": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 10, "Santa Lúcia": 10, "Sierra": 10, "Portinari": 10, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 10, "Pôr do Sol": 15, "Val Paraíso": 14, "Vale da Perucaba": 10, "UFAL": 14 },
+            "Rafa Pizza": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 7, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 9, "Canafístula": 8, "Caititus": 7, "Cacimbas": 8, "Canaã": 17, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Eldorado": 7, "Guaribas": 9, "Itapoã": 6, "Jardim de Maria": 7, "Jardim Tropical": 6, "Jardim das Paineiras": 10, "Jardim Esperança": 9, "João Paulo II": 8, "Manoel Teles": 7, "Massaranduba": 9, "Mangabeiras": 12, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 9, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 10, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 8, "S. Nilo Coelho": 10, "S. Teotônio Vilela": 7, "Verdes Campos": 9, "Zélia Barbosa": 9, "Agreste": 18, "Aroeiras": 12, "Tucano": 12, "Altaville": 10, "Araville": 10, "Asa Branca": 12, "Alto do Morro": 12, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 12, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 12, "Casa Blanca": 13, "Cerejeiras": 11, "Campo Grande": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 9, "Flor de Maria": 12, "Flor de Ypê": 12, "Frigovale": 12, "Hospital Chama": 10, "Hospital Ágape": 10, "IFAL": 9, "Jatobá": 12, "Jardim das Bromélias": 10, "Jardins Perucaba 1 e 2": 11, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lorenzo Bernine": 8, "Monte Sinai": 10, "Ouro Verde": 10, "Reserva Perucaba": 10, "Riviera": 10, "Residencial Espace": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Santa Lúcia": 10, "Sierra": 10, "Portinari": 10, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 12, "Pôr do Sol": 16, "Val Paraíso": 14, "Vale da Perucaba": 12, "UFAL": 16 },
+            "S. Teotônio Vilela": { "Alto do Cruzeiro": 6, "Baixa Grande": 7, "Baixão": 7, "Boa Vista": 9, "Brasília": 7, "Batingas": 13, "Brasiliana": 6, "Bom Sucesso": 8, "Canafístula": 9, "Caititus": 6, "Cacimbas": 8, "Canaã": 15, "Cavaco": 7, "Capiatá": 6, "Centro": 6, "Deputado Nezinho": 8, "Eldorado": 6, "Guaribas": 9, "Itapoã": 7, "Jardim de Maria": 7, "Jardim Tropical": 8, "Jardim das Paineiras": 9, "Jardim Esperança": 8, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 8, "Mangabeiras": 10, "Nova Esperança": 9, "Novo Horizonte": 7, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 8, "Porto Vitória": 11, "Santa Edwiges": 6, "Santa Esmeralda": 7, "Sonho Verde 1/2": 10, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 6, "Verdes Campos": 9, "Zélia Barbosa": 9, "Aroeiras": 10, "Agreste": 15, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 12, "Asa Branca": 12, "Alto do Morro": 10, "Bela Morada": 11, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 10, "Campo Grande": 10, "Colibri": 8, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 15, "Flor de Maria": 10, "Flor de Ypê": 10, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 11, "Jardim das Algarobas": 8, "Jatobá": 10, "Jardins Perucaba 1 e 2": 10, "Jardins": 10, "Jardim Europa": 12, "José Ernesto": 10, "JBR": 12, "Lorenzo Bernine": 9, "Metropolitan": 10, "Monte Sinai": 11, "Mestre Nelson": 12, "Ouro Verde": 10, "Riviera": 10, "Reserva Perucaba": 12, "Residencial Espace": 10, "Recanto do Tucano": 10, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 10, "San Lorenzo": 13, "Sierra": 10, "Sementeira": 15, "Tucano": 10, "Portinari": 10, "Palmeira Imperial": 12, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 8, "Pedra Azul": 12, "Pôr do Sol": 14, "Parc Ville": 9, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 14 },
+            "Santa Esmeralda": { "Alto do Cruzeiro": 6, "Baixa Grande": 8, "Baixão": 8, "Boa Vista": 9, "Brasília": 6, "Batingas": 13, "Brasiliana": 7, "Bom Sucesso": 9, "Canafístula": 9, "Caititus": 7, "Cacimbas": 8, "Canaã": 16, "Cavaco": 8, "Capiatá": 7, "Centro": 7, "Deputado Nezinho": 8, "Eldorado": 8, "Guaribas": 10, "Itapoã": 6, "Jardim de Maria": 7, "Jardim Tropical": 7, "Jardim das Paineiras": 9, "Jardim Esperança": 9, "João Paulo II": 9, "Manoel Teles": 8, "Massaranduba": 9, "Mangabeiras": 10, "Nova Esperança": 8, "Novo Horizonte": 6, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 7, "P. Antônio Lima": 8, "Planalto": 9, "Primavera": 8, "Porto Vitória": 12, "Santa Edwiges": 7, "Santa Esmeralda": 6, "Sonho Verde 1/2": 11, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 8, "S. Nilo Coelho": 9, "S. Teotônio Vilela": 7, "Verdes Campos": 9, "Zélia Barbosa": 9, "Aroeiras": 12, "Agreste": 17, "Alazão": "CONSULTAR", "Altaville": 10, "Araville": 11, "Asa Branca": 12, "Alto do Morro": 12, "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 12, "Campo Belo": 10, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 12, "Cidade Jardim": 12, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 11, "Campo Grande": 12, "Colibri": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Fernandes": 18, "Flor de Maria": 12, "Flor de Ypê": 12, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 12, "Jardim das Algarobas": 10, "Jatobá": 12, "Jardins Perucaba 1 e 2": 10, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 12, "Lorenzo Bernine": 10, "Metropolitan": 8, "Monte Sinai": 11, "Mestre Nelson": 12, "Ouro Verde": 9, "Riviera": 10, "Reserva Perucaba": 10, "Residencial Espace": 10, "Recanto do Tucano": 11, "Recanto da Boa Vista": 10, "Shopping": 10, "Senhora Aparecida": 13, "San Lorenzo": 13, "Sierra": 9, "Sementeira": 15, "Tucano": 12, "Portinari": 11, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 10, "Pedra Azul": 12, "Pôr do Sol": 15, "Parc Ville": 10, "Val Paraíso": 13, "Vale da Perucaba": 10, "UFAL": 15 },
+            "São Luís": { "Alto do Cruzeiro": 8, "Baixa Grande": 10, "Baixão": 9, "Boa Vista": 9, "Brasília": 8, "Batingas": 13, "Brasiliana": 10, "Bom Sucesso": 12, "Canafístula": 9, "Caititus": 9, "Cacimbas": 8, "Canaã": 17, "Cavaco": 10, "Capiatá": 9, "Centro": 8, "Deputado Nezinho": 11, "Eldorado": 10, "Guaribas": 8, "Itapoã": 10, "Jardim de Maria": 10, "Jardim Tropical": 8, "Jardim das Paineiras": 13, "Jardim Esperança": 12, "João Paulo II": 8, "Manoel Teles": 9, "Massaranduba": 12, "Mangabeiras": 13, "Nova Esperança": 7, "Novo Horizonte": 10, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 7, "P. Antônio Lima": 9, "Planalto": 12, "Primavera": 8, "Porto Vitória": 14, "Santa Edwiges": 10, "Santa Esmeralda": 10, "Sonho Verde 1/2": 14, "São Luís 1": 7, "São Luís 2": 7, "S. Arnon de Melo": 11, "S. Nilo Coelho": 13, "S. Teotônio Vilela": 9, "Verdes Campos": 7, "Zélia Barbosa": 12, "Aroeiras": 15, "Agreste": 18, "Alazão": "CONSULTAR", "Altaville": 12, "Araville": 13, "Asa Branca": 10, "Alto do Morro": 15, "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 10, "Campo Belo": 8, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 15, "Cidade Jardim": 10, "Casa Blanca": 13, "Casa das Molas": 13, "Cerejeiras": 15, "Campo Grande": 9, "Colibri": 13, "Divina Luz": "CONSULTAR", "Dona Lourdes": 9, "Felicita": 13, "Fernandes": 17, "Flor de Maria": 15, "Flor de Ypê": 15, "Furnas": "CONSULTAR", "Golden Ville": 12, "Hospital Ágape": 12, "Hospital Chama": 12, "IFAL": 12, "Jardim das Bromélias": 15, "Jardim das Algarobas": 13, "Jatobá": 15, "Jardins Perucaba 1 e 2": 12, "Jardins": 15, "Jardim Europa": 12, "José Ernesto": 15, "JBR": 15, "Lorenzo Bernine": 8, "Metropolitan": 10, "Monte Sinai": 15, "Mestre Nelson": 15, "Ouro Verde": 12, "Riviera": 12, "Reserva Perucaba": 12, "Residencial Espace": 10, "Recanto do Tucano": 15, "Recanto da Boa Vista": 9, "Shopping": 12, "Senhora Aparecida": 15, "San Lorenzo": 13, "Sierra": 13, "Sementeira": 17, "Tucano": 15, "Portinari": 10, "Palmeira Imperial": 16, "Pau d'Arco": "CONSULTAR", "Pedro Tertuliano": 13, "Pedra Azul": 10, "Pôr do Sol": 17, "Parc Ville": 10, "Val Paraíso": 16, "Vale da Perucaba": 12, "UFAL": 15 },
+            "Shopping Center": { "Alto do Cruzeiro": 8, "Baixa Grande": 10, "Baixão": 9, "Boa Vista": 12, "Brasília": 8, "Batingas": 15, "Brasiliana": 8, "Bom Sucesso": 10, "Canafístula": 12, "Caititus": 8, "Cacimbas": 10, "Canaã": 15, "Cavaco": 10, "Capiatá": 8, "Centro": 8, "Eldorado": 9, "Guaribas": 10, "Itapoã": 8, "Jardim de Maria": 8, "Jardim Tropical": 9, "Jardim das Paineiras": 12, "Jardim Esperança": 10, "João Paulo II": 12, "Manoel Teles": 10, "Massaranduba": 10, "Mangabeiras": 10, "Nova Esperança": 10, "Novo Horizonte": 8, "Olho d'Água dos Cajuzinhos": 12, "Ouro Preto": 9, "P. Antônio Lima": 10, "Planalto": 9, "Primavera": 10, "Porto Vitória": 12, "Santa Edwiges": 8, "Santa Esmeralda": 8, "Sonho Verde 1/2": 12, "São Luís 1": 10, "São Luís 2": 10, "S. Arnon de Melo": 9, "S. Nilo Coelho": 12, "S. Teotônio Vilela": 8, "Verdes Campos": 12, "Zélia Barbosa": 10, "Agreste": 17, "Aroeiras": 12, "Tucano": 12, "Altaville": 10, "Araville": 10, "Asa Branca": 13, "Alto do Morro": 12, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 13, "Bem Viver": 13, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 10, "Cidade Jardim": 13, "Casa Blanca": 15, "Cerejeiras": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 12, "Felicita": 9, "Flor de Maria": 10, "Flor de Ypê": 10, "Hospital Chama": 10, "IFAL": 10, "Jardim das Bromélias": 10, "Jatobá": 10, "Jardins Perucaba 1 e 2": 12, "Jardins": 12, "Jardim Europa": 10, "José Ernesto": 12, "JBR": 13, "Lorenzo Bernine": 10, "Monte Sinai": 10, "Ouro Verde": 10, "Reserva Perucaba": 12, "Riviera": 12, "Residencial Espace": 10, "Recanto da Boa Vista": 13, "Shopping": 8, "Senhora Aparecida": 12, "San Lorenzo": 12, "Sierra": 10, "Portinari": 10, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 15, "Pôr do Sol": 15, "Val Paraíso": 13, "Vale da Perucaba": 15, "UFAL": 15 },
+            "Tchê Paladar": { "Alto do Cruzeiro": 10, "Baixa Grande": 15, "Baixão": 12, "Boa Vista": 8, "Brasília": 10, "Batingas": 8, "Brasiliana": 15, "Bom Sucesso": 18, "Canafístula": 8, "Caititus": 12, "Cacimbas": 8, "Canaã": 25, "Cavaco": 15, "Capiatá": 12, "Centro": 12, "Eldorado": 13, "Guaribas": 8, "Itapoã": 12, "Jardim de Maria": 13, "Jardim Tropical": 8, "Jardim das Paineiras": 18, "Jardim Esperança": 18, "João Paulo II": 10, "Manoel Teles": 12, "Massaranduba": 18, "Mangabeiras": 20, "Nova Esperança": 8, "Novo Horizonte": 12, "Olho d'Água dos Cajuzinhos": 12, "Ouro Preto": 10, "P. Antônio Lima": 12, "Planalto": 17, "Primavera": 10, "Porto Vitória": 20, "Santa Edwiges": 13, "Santa Esmeralda": 12, "Sonho Verde 1/2": 18, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 13, "S. Nilo Coelho": 18, "S. Teotônio Vilela": 12, "Verdes Campos": 8, "Zélia Barbosa": 17, "Agreste": 25, "Aroeiras": 20, "Tucano": 20, "Altaville": 13, "Araville": 13, "Asa Branca": 10, "Alto do Morro": 20, "Alazão": "CONSULTAR", "Bela Morada": 8, "Brisa do Lago": 15, "Bem Viver": 8, "Campo de Tiro": 10, "Capim": "CONSULTAR", "Colorado": 20, "Cidade Jardim": 8, "Casa Blanca": 8, "Cerejeiras": 20, "Divina Luz": "CONSULTAR", "Dona Lourdes": 8, "Felicita": 15, "Flor de Maria": 20, "Flor de Ypê": 20, "Hospital Chama": 15, "IFAL": 15, "Jardim das Bromélias": 20, "Jatobá": 20, "Jardins Perucaba 1 e 2": 16, "Jardins": 20, "Jardim Europa": 15, "José Ernesto": 20, "JBR": 20, "Lorenzo Bernine": 8, "Monte Sinai": 15, "Ouro Verde": 15, "Reserva Perucaba": 16, "Riviera": 16, "Residencial Espace": 15, "Recanto da Boa Vista": 8, "Shopping": 15, "Senhora Aparecida": 20, "San Lorenzo": 8, "Sierra": 16, "Portinari": 8, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 8, "Pôr do Sol": 25, "Val Paraíso": 20, "Vale da Perucaba": 16, "UFAL": 25 },
+            "Verdes Campos": { "Alto do Cruzeiro": 10, "Baixa Grande": 12, "Baixão": 11, "Boa Vista": 9, "Brasília": 10, "Batingas": 13, "Brasiliana": 12, "Bom Sucesso": 15, "Canafístula": 10, "Caititus": 10, "Cacimbas": 10, "Canaã": 20, "Cavaco": 12, "Capiatá": 10, "Centro": 10, "Eldorado": 11, "Guaribas": 8, "Itapoã": 11, "Jardim de Maria": 12, "Jardim Tropical": 10, "Jardim das Paineiras": 15, "Jardim Esperança": 15, "João Paulo II": 10, "Manoel Teles": 10, "Massaranduba": 15, "Mangabeiras": 15, "Nova Esperança": 8, "Novo Horizonte": 12, "Olho d'Água dos Cajuzinhos": 10, "Ouro Preto": 10, "P. Antônio Lima": 10, "Planalto": 15, "Primavera": 10, "Porto Vitória": 17, "Santa Edwiges": 12, "Santa Esmeralda": 12, "Sonho Verde 1/2": 16, "São Luís 1": 8, "São Luís 2": 8, "S. Arnon de Melo": 13, "S. Nilo Coelho": 15, "S. Teotônio Vilela": 10, "Verdes Campos": 8, "Zélia Barbosa": 12, "Agreste": 25, "Aroeiras": 17, "Tucano": 17, "Altaville": 15, "Araville": 15, "Asa Branca": 9, "Alto do Morro": 17, "Alazão": "CONSULTAR", "Bela Morada": 10, "Brisa do Lago": 12, "Bem Viver": 10, "Campo de Tiro": 12, "Capim": "CONSULTAR", "Colorado": 17, "Cidade Jardim": 10, "Casa Blanca": 13, "Cerejeiras": 17, "Campo Grande": 10, "Divina Luz": "CONSULTAR", "Dona Lourdes": 10, "Felicita": 10, "Flor de Maria": 17, "Flor de Ypê": 17, "Frigovale": 11, "Hospital Chama": 13, "Hospital Ágape": 15, "IFAL": 13, "Jatobá": 17, "Jardim das Bromélias": 17, "Jardins Perucaba 1 e 2": 13, "Jardins": 17, "Jardim Europa": 15, "José Ernesto": 17, "JBR": 17, "Lorenzo Bernine": 9, "Monte Sinai": 16, "Ouro Verde": 15, "Reserva Perucaba": 13, "Riviera": 13, "Residencial Espace": 13, "Recanto da Boa Vista": 10, "Shopping": 15, "Senhora Aparecida": 17, "San Lorenzo": 10, "Santa Lúcia": 16, "Sierra": 15, "Portinari": 15, "Pau d'Arco": "CONSULTAR", "Pedra Azul": 10, "Pôr do Sol": 20, "Val Paraíso": 18, "Vale da Perucaba": 12, "UFAL": 20 },
+            "Zélia Barbosa": { "Alto do Cruzeiro": 9, "Baixa Grande": 7, "Baixão": 7, "Boa Vista": 10, "Brasília": 9, "Batingas": 14, "Brasiliana": 8, "Bom Sucesso": 8, "Canafístula": 10, "Caititus": 9, "Cacimbas": 8, "Canaã": 15, "Cavaco": 7, "Capiatá": 8, "Centro": 7, "Eldorado": 7, "Guaribas": 10, "Itapoã": 10, "Jardim de Maria": 10, "Jardim Tropical": 10, "Jardim das Paineiras": 8, "Jardim Esperança": 8, "João Paulo II": 9, "Manoel Teles": 7, "Massaranduba": 8, "Mangabeiras": 12, "Nova Esperança": 10, "Novo Horizonte": 10, "Olho d'Água dos Cajuzinhos": 9, "Ouro Preto": 8, "P. Antônio Lima": 8, "Planalto": 8, "Primavera": 8, "Porto Vitória": 10, "Santa Edwiges": 8, "Santa Esmeralda": 10, "Sonho Verde 1/2": 9, "São Luís 1": 10, "São Luís 2": 9, "S. Arnon de Melo": 10, "S. Nilo Coelho": 8, "S. Teotônio Vilela": 8, "Verdes Campos": 10, "Zélia Barbosa": 7, "Agreste": 16, "Aroeiras": 12, "Altaville": 12, "Araville": 12, "Asa Branca": 10, "Bela Morada": 12, "Brisa do Lago": 11, "Bem Viver": 13, "Campo de Tiro": 15, "Campo Grande": 12, "Capim": 20, "Colorado": 10, "Coca Cola": 10, "Casa Blanca": 14, "Cerejeiras": 10, "Divina Luz": 20, "Residencial Espace": 10, "Felicita": 10, "Flor de Maria": 10, "Hospital Chama": 12, "IFAL": 12, "Jardins": 10, "Jardim das Bromélias": 10, "Jatobá": 10, "Jardins Perucaba 1 e 2": 8, "Jardim Europa": 12, "José Ernesto": 11, "JBR": 10, "Lagos do Sul": 10, "Monte Sinai": 15, "Ouro Verde": 10, "Reserva Perucaba": 8, "Riviera": 8, "San Lorenzo": 12, "Sierra": 10, "Shopping": 10, "Senhora Aparecida": 12, "Dona Lourdes": 12, "Pau d'Arco": 25, "Pedra Azul": 13, "Pôr do Sol": 15, "Val Paraíso": 13, "Vale da Perucaba": 12, "UFAL": 15 }
+        };
+
+        // Mapa de sinônimos e abreviações para garantir 100% de acerto na digitação
+        const ALIAS_MAP = {
+            "s. arnon de melo": "arnon de melo",
+            "senador arnon de melo": "arnon de melo",
+            "arnon de melo": "arnon de melo",
+            "sao luis": "sao luis 1",
+            "sao luiz": "sao luis 1",
+            "sao luiz 1": "sao luis 1",
+            "sao luiz 2": "sao luis 2",
+            "glam": "glam sao luis",
+            "planalto": "planalto / massaranduba",
+            "massaranduba": "planalto / massaranduba",
+            "shopping": "shopping center",
+            "shopping center": "shopping center",
+            "tche": "tche paladar",
+            "frango": "frango favorito",
+            "rafa": "rafa pizza",
+            "teotonio vilela": "s. teotonio vilela",
+            "senador teotonio vilela": "s. teotonio vilela",
+            "nilo coelho": "s. nilo coelho",
+            "senador nilo coelho": "s. nilo coelho",
+            "padre antonio lima": "p. antonio lima",
+            "antonio lima": "p. antonio lima",
+            "olho d'agua dos c.": "olho d'agua dos cajuzinhos",
+            "olho dagua dos c.": "olho d'agua dos cajuzinhos",
+            "olho dagua": "olho d'agua dos cajuzinhos",
+            "olho d'agua": "olho d'agua dos cajuzinhos",
+            "santa edwirges": "santa edwiges",
+            "sonho verde": "sonho verde 1/2",
+            "sonho verde 1": "sonho verde 1/2",
+            "sonho verde 2": "sonho verde 1/2",
+            "joao paulo": "joao paulo ii",
+            "joao paulo 2": "joao paulo ii",
+            "alta ville": "altaville",
+            "alta/araville": "altaville",
+            "aroeiras/tucano": "aroeiras",
+            "aroeiras/tucanos": "aroeiras",
+            "tucanos": "tucano",
+            "casa branca": "casa blanca",
+            "dona lurdes": "dona lourdes",
+            "s. lourdes": "dona lourdes",
+            "santa lourdes": "dona lourdes",
+            "flor de maria/ype": "flor de maria",
+            "h. chama": "hospital chama",
+            "h. chama/ifal": "hospital chama",
+            "h. chama / ifal": "hospital chama",
+            "j. bromelias": "jardim das bromelias",
+            "jardim bromelias": "jardim das bromelias",
+            "j. algarobas": "jardim das algarobas",
+            "j. perucaba 1/2": "jardins perucaba 1 e 2",
+            "j. perucaba 1": "jardins perucaba 1 e 2",
+            "j. perucaba 2": "jardins perucaba 1 e 2",
+            "jardins perucaba": "jardins perucaba 1 e 2",
+            "jardins perucaba 1": "jardins perucaba 1 e 2",
+            "jardins perucaba 2": "jardins perucaba 1 e 2",
+            "j. europa": "jardim europa",
+            "r. perucaba": "reserva perucaba",
+            "reserva p/riviera": "reserva perucaba",
+            "reserva/riviera": "reserva perucaba",
+            "espace": "residencial espace",
+            "res. espace": "residencial espace",
+            "res espace": "residencial espace",
+            "rec. da boa vista": "recanto da boa vista",
+            "rec da boa vista": "recanto da boa vista",
+            "rec. d. boa vista": "recanto da boa vista",
+            "s. aparecida": "senhora aparecida",
+            "nossa senhora aparecida": "senhora aparecida",
+            "vale perucaba": "vale da perucaba"
+        };
+
+        let TABELA_NORMALIZADA = {};
+        let MAPA_EXIBICAO_DESTINOS = {};
+        let NOMES_ORIGENS_OFICIAIS = Object.keys(TABELA_PRECOS_RAW);
+        let NOMES_DESTINOS_UNIFICADOS = new Set();
+
+        function limparAcentos(texto) {
+            if (!texto) return "";
+            return texto.toLowerCase().trim()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, " ");
+        }
+
+        function normalizarChave(texto) {
+            const limpo = limparAcentos(texto);
+            return ALIAS_MAP[limpo] || limpo;
+        }
+
+        function inicializarTabelaPrecos() {
+            TABELA_NORMALIZADA = {};
+            MAPA_EXIBICAO_DESTINOS = {};
+            NOMES_DESTINOS_UNIFICADOS = new Set();
+
+            // 1. Carrega todas as 24 tabelas normalizadas
+            for (const [origemNome, destinosObj] of Object.entries(TABELA_PRECOS_RAW)) {
+                const origKey = normalizarChave(origemNome);
+                if (!TABELA_NORMALIZADA[origKey]) TABELA_NORMALIZADA[origKey] = {};
+                if (!MAPA_EXIBICAO_DESTINOS[origemNome]) MAPA_EXIBICAO_DESTINOS[origemNome] = [];
+
+                NOMES_DESTINOS_UNIFICADOS.add(origemNome);
+
+                for (const [destNome, valor] of Object.entries(destinosObj)) {
+                    const destKey = normalizarChave(destNome);
+                    const destRawLimpo = limparAcentos(destNome);
+
+                    TABELA_NORMALIZADA[origKey][destKey] = valor;
+                    TABELA_NORMALIZADA[origKey][destRawLimpo] = valor;
+
+                    // Se na tabela de destino o nome for "S. Arnon de Melo", também indexa "arnon de melo"
+                    if (destRawLimpo === "s. arnon de melo") {
+                        TABELA_NORMALIZADA[origKey]["arnon de melo"] = valor;
+                    }
+                    if (destRawLimpo === "shopping") {
+                        TABELA_NORMALIZADA[origKey]["shopping center"] = valor;
+                    }
+                    if (destRawLimpo === "planalto" || destRawLimpo === "massaranduba") {
+                        if (TABELA_NORMALIZADA[origKey]["planalto / massaranduba"] === undefined) {
+                            TABELA_NORMALIZADA[origKey]["planalto / massaranduba"] = valor;
+                        }
+                    }
+                    if (destRawLimpo === "sao luis 1") {
+                        if (TABELA_NORMALIZADA[origKey]["sao luis"] === undefined) {
+                            TABELA_NORMALIZADA[origKey]["sao luis"] = valor;
+                        }
+                    }
+
+                    NOMES_DESTINOS_UNIFICADOS.add(destNome);
+                    MAPA_EXIBICAO_DESTINOS[origemNome].push({ nome: destNome, valor });
+                }
+            }
+
+            // 2. Cria espelhamento reverso automático para bairros que só existem como destino
+            for (const [origKey, destinosObj] of Object.entries(TABELA_NORMALIZADA)) {
+                for (const [destKey, valor] of Object.entries(destinosObj)) {
+                    if (!TABELA_NORMALIZADA[destKey]) TABELA_NORMALIZADA[destKey] = {};
+                    if (TABELA_NORMALIZADA[destKey][origKey] === undefined) {
+                        TABELA_NORMALIZADA[destKey][origKey] = valor;
+                    }
+                }
+            }
+
+            popularDatalistsESelect();
+        }
+
+        function popularDatalistsESelect() {
+            const origensOrdenadas = [...NOMES_ORIGENS_OFICIAIS].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            const destinosOrdenados = Array.from(NOMES_DESTINOS_UNIFICADOS).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+            // Datalist de origens (24 bases principais no topo + demais bairros)
+            const setOrigens = new Set([...origensOrdenadas, ...destinosOrdenados]);
+            document.getElementById('lista-bairros-origem').innerHTML = Array.from(setOrigens)
+                .map(o => `<option value="${o}">`).join('');
+
+            // Datalist de destinos
+            document.getElementById('lista-bairros-geral').innerHTML = destinosOrdenados
+                .map(d => `<option value="${d}">`).join('');
+
+            // Select da aba "Tabelas"
+            const selectConsulta = document.getElementById('consulta-origem');
+            if (selectConsulta) {
+                const valorAtual = selectConsulta.value;
+                selectConsulta.innerHTML = origensOrdenadas.map(o => `<option value="${o}">${o}</option>`).join('');
+                if (valorAtual && origensOrdenadas.includes(valorAtual)) {
+                    selectConsulta.value = valorAtual;
+                } else {
+                    selectConsulta.value = "Centro";
+                }
+            }
+        }
+
+        function buscarPrecoNaTabela(origemTexto, destinoTexto) {
+            if (!origemTexto || !destinoTexto) return null;
+            const origKey = normalizarChave(origemTexto);
+            const origRaw = limparAcentos(origemTexto);
+            const destKey = normalizarChave(destinoTexto);
+            const destRaw = limparAcentos(destinoTexto);
+
+            const candidatosOrigem = [origKey, origRaw];
+            const candidatosDestino = [destKey, destRaw];
+
+            for (const o of candidatosOrigem) {
+                if (TABELA_NORMALIZADA[o]) {
+                    for (const d of candidatosDestino) {
+                        if (TABELA_NORMALIZADA[o][d] !== undefined) {
+                            return TABELA_NORMALIZADA[o][d];
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function calcularValorAutomatico() {
+            const coletadoRaw = document.getElementById('entrega-coletado').value;
+            const destinoRaw = document.getElementById('entrega-entregue').value;
+            const inputValor = document.getElementById('entrega-valor');
+            const badgeAuto = document.getElementById('badge-auto-preco');
+            const badgeConsultar = document.getElementById('badge-consultar-preco');
+
+            // Busca o preço exclusivamente através do Bairro Coleta -> Bairro Destino
+            const resultado = buscarPrecoNaTabela(coletadoRaw, destinoRaw);
+
+            badgeAuto.classList.add('hidden');
+            badgeConsultar.classList.add('hidden');
+
+            if (resultado === "CONSULTAR") {
+                inputValor.value = '';
+                inputValor.placeholder = "A Consultar (digite)";
+                badgeConsultar.classList.remove('hidden');
+            } else if (typeof resultado === 'number') {
+                inputValor.value = resultado.toFixed(2);
+                inputValor.placeholder = "0,00";
+                badgeAuto.classList.remove('hidden');
+            } else {
+                inputValor.placeholder = "0,00";
+            }
+        }
+
+        function renderizarConsultaTabela() {
+            const origemSel = document.getElementById('consulta-origem').value;
+            const termoBusca = limparAcentos(document.getElementById('consulta-busca').value);
+            const container = document.getElementById('lista-consulta-precos');
+            const contador = document.getElementById('contador-destinos-tabela');
+
+            if (!container || !MAPA_EXIBICAO_DESTINOS[origemSel]) return;
+
+            const listaCompleta = MAPA_EXIBICAO_DESTINOS[origemSel];
+            const filtrada = listaCompleta.filter(item => {
+                if (!termoBusca) return true;
+                return limparAcentos(item.nome).includes(termoBusca);
+            }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+            contador.innerText = `${filtrada.length} ${filtrada.length === 1 ? 'local' : 'locais'}`;
+
+            if (filtrada.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 bg-slate-900/50 border border-slate-800 rounded-2xl text-xs text-slate-400">Nenhum destino encontrado para "${document.getElementById('consulta-busca').value}".</div>`;
+                return;
+            }
+
+            container.innerHTML = filtrada.map(item => {
+                const isConsultar = item.valor === "CONSULTAR";
+                const badgePreco = isConsultar
+                    ? `<span class="text-xs font-extrabold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg">A Consultar</span>`
+                    : `<span class="text-sm font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg">R$ ${item.valor.toFixed(2).replace('.', ',')}</span>`;
+
+                const origEscapada = origemSel.replace(/'/g, "\\'");
+                const destEscapado = item.nome.replace(/'/g, "\\'");
+
+                return `
+                    <div onclick="usarRotaDaTabela('${origEscapada}', '${destEscapado}')" class="bg-slate-900 hover:bg-slate-800/80 border border-slate-800/90 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 cursor-pointer active:scale-[0.99] transition">
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-white truncate">${item.nome}</p>
+                            <p class="text-[10px] text-slate-500">Saindo de ${origemSel} • Toque p/ lançar</p>
+                        </div>
+                        <div class="shrink-0">${badgePreco}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function usarRotaDaTabela(origem, destino) {
+            abrirModal('entrega');
+            document.getElementById('entrega-loja').value = '';
+            document.getElementById('entrega-coletado').value = origem;
+            document.getElementById('entrega-entregue').value = destino;
+            calcularValorAutomatico();
+            document.getElementById('entrega-loja').focus();
+        }
+
+        function getHojeISO() {
+            const hoje = new Date();
+            const offset = hoje.getTimezoneOffset();
+            const local = new Date(hoje.getTime() - (offset * 60000));
+            return local.toISOString().split('T')[0];
+        }
+
+        function getDataSelecionada() {
+            const input = document.getElementById('date-selector');
+            return (input && input.value) ? input.value : getHojeISO();
+        }
+
+        function carregarDados() {
+            try {
+                const salvo = localStorage.getItem(STORAGE_KEY);
+                if (salvo) {
+                    const parsed = JSON.parse(salvo);
+                    estado.aberturas = parsed.aberturas || {};
+                    estado.movimentacoes = Array.isArray(parsed.movimentacoes) ? parsed.movimentacoes : [];
+                    estado.pix = parsed.pix || { tipo: 'CPF', chave: '', titular: '' };
+                    estado.ultimaOrigem = parsed.ultimaOrigem || '';
+                    estado.ultimaLoja = parsed.ultimaLoja || '';
+                }
+            } catch (e) { console.error(e); }
+
+            document.getElementById('pix-tipo').value = estado.pix.tipo || 'CPF';
+            document.getElementById('pix-chave').value = estado.pix.chave || '';
+            document.getElementById('pix-titular').value = estado.pix.titular || '';
+        }
+
+        function persistirDados() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(estado)); } catch (e) { console.error(e); }
+        }
+
+        let toastTimer = null;
+        function mostrarToast(msg, icone = '✅') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icone;
+            toast.classList.remove('hidden');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+
+        let acaoConfirmacaoPendente = null;
+        function pedirConfirmacao(titulo, msg, callbackConfirmar) {
+            document.getElementById('confirm-titulo').innerText = titulo;
+            document.getElementById('confirm-msg').innerText = msg;
+            acaoConfirmacaoPendente = callbackConfirmar;
+            const btn = document.getElementById('confirm-btn-acao');
+            btn.onclick = () => {
+                if (acaoConfirmacaoPendente) acaoConfirmacaoPendente();
+                fecharConfirmacao();
+            };
+            document.getElementById('modal-confirmacao').classList.remove('hidden');
+        }
+
+        function fecharConfirmacao() {
+            document.getElementById('modal-confirmacao').classList.add('hidden');
+            acaoConfirmacaoPendente = null;
+        }
+
+        function copiarTextoParaAreaDeTransferencia(texto, msgSucesso) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(texto).then(() => {
+                    mostrarToast(msgSucesso);
+                }).catch(() => fallbackCopyText(texto, msgSucesso));
+            } else {
+                fallbackCopyText(texto, msgSucesso);
+            }
+        }
+
+        function fallbackCopyText(texto, msgSucesso) {
+            const textArea = document.createElement("textarea");
+            textArea.value = texto;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                mostrarToast(msgSucesso);
+            } catch (err) {
+                mostrarToast('Não foi possível copiar automaticamente.', '⚠️');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function mudarAba(aba) {
+            ['dashboard', 'acertos', 'tabela', 'pix'].forEach(a => {
+                document.getElementById(`view-${a}`).classList.add('hidden');
+                document.getElementById(`nav-${a}`).className = "relative flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 hover:text-slate-200 font-semibold text-[11px] gap-1 transition";
+            });
+
+            document.getElementById(`view-${aba}`).classList.remove('hidden');
+            const navActive = document.getElementById(`nav-${aba}`);
+            if (aba === 'dashboard') navActive.className = "relative flex flex-col items-center justify-center py-2 rounded-xl text-emerald-400 bg-emerald-500/10 font-bold text-[11px] gap-1 transition";
+            if (aba === 'acertos') {
+                navActive.className = "relative flex flex-col items-center justify-center py-2 rounded-xl text-amber-400 bg-amber-500/10 font-bold text-[11px] gap-1 transition";
+                renderizarAcertos();
+            }
+            if (aba === 'tabela') {
+                navActive.className = "relative flex flex-col items-center justify-center py-2 rounded-xl text-emerald-400 bg-emerald-500/10 font-bold text-[11px] gap-1 transition";
+                renderizarConsultaTabela();
+            }
+            if (aba === 'pix') navActive.className = "relative flex flex-col items-center justify-center py-2 rounded-xl text-sky-400 bg-sky-500/10 font-bold text-[11px] gap-1 transition";
+        }
+
+        function abrirModal(tipo) {
+            const modalEl = document.getElementById(`modal-${tipo}`);
+            if (!modalEl) return;
+            modalEl.classList.remove('hidden');
+            if (tipo === 'entrega') {
+                document.getElementById('entrega-loja').value = '';
+                document.getElementById('entrega-coletado').value = '';
+                document.getElementById('entrega-entregue').value = '';
+                document.getElementById('entrega-valor').value = '';
+                document.getElementById('badge-auto-preco').classList.add('hidden');
+                document.getElementById('badge-consultar-preco').classList.add('hidden');
+            }
+        }
+
+        function fecharModais() {
+            ['entrega', 'gasolina', 'sangria'].forEach(t => {
+                const el = document.getElementById(`modal-${t}`);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        function salvarConfigPix() {
+            estado.pix.tipo = document.getElementById('pix-tipo').value;
+            estado.pix.chave = document.getElementById('pix-chave').value.trim();
+            estado.pix.titular = document.getElementById('pix-titular').value.trim();
+            persistirDados();
+            mostrarToast('Dados do Pix salvos com sucesso!');
+            mudarAba('dashboard');
+        }
+
+        function salvarAbertura() {
+            const data = getDataSelecionada();
+            const caixaInicial = parseFloat(document.getElementById('caixa-inicial').value) || 0;
+            const kmInicial = document.getElementById('km-inicial').value;
+            const kmFinal = document.getElementById('km-final').value;
+
+            if (!estado.aberturas[data]) estado.aberturas[data] = {};
+            estado.aberturas[data].caixaInicial = caixaInicial;
+            estado.aberturas[data].kmInicial = kmInicial;
+            estado.aberturas[data].kmFinal = kmFinal;
+
+            persistirDados();
+            atualizarInterface();
+            mostrarToast('Dados do turno atualizados!');
+        }
+
+        function salvarEntrega(e) {
+            e.preventDefault();
+            const data = getDataSelecionada();
+            const loja = document.getElementById('entrega-loja').value.trim();
+            const coletado = document.getElementById('entrega-coletado').value.trim() || loja;
+            const entregue = document.getElementById('entrega-entregue').value.trim();
+            const valor = parseFloat(document.getElementById('entrega-valor').value) || 0;
+            const metodo = document.querySelector('input[name="entrega-metodo"]:checked').value;
+            const status = document.querySelector('input[name="entrega-status"]:checked').value;
+
+            if (coletado) estado.ultimaOrigem = coletado;
+            if (loja) estado.ultimaLoja = loja;
+
+            const novaMov = {
+                id: 'ent_' + Date.now(),
+                tipo: 'entrega',
+                data,
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                coletado, entregue, loja, valor, metodo, status
+            };
+
+            estado.movimentacoes.unshift(novaMov);
+            persistirDados();
+            popularDatalistsESelect();
+            fecharModais();
+            e.target.reset();
+            document.getElementById('badge-auto-preco').classList.add('hidden');
+            document.getElementById('badge-consultar-preco').classList.add('hidden');
+            atualizarInterface();
+            mostrarToast('Entrega salva com sucesso!');
+        }
+
+        function salvarSaida(e, tipo) {
+            e.preventDefault();
+            const data = getDataSelecionada();
+            const valor = parseFloat(document.getElementById(`${tipo}-valor`).value) || 0;
+            const obs = document.getElementById(`${tipo}-obs`).value.trim() || (tipo === 'gasolina' ? 'Gasolina' : 'Sangria');
+
+            const novaMov = {
+                id: tipo + '_' + Date.now(),
+                tipo, data,
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                valor, obs
+            };
+
+            estado.movimentacoes.unshift(novaMov);
+            persistirDados();
+            fecharModais();
+            e.target.reset();
+            atualizarInterface();
+            mostrarToast(tipo === 'gasolina' ? 'Gasto lançado!' : 'Sangria realizada!');
+        }
+
+        function excluirMovimentacao(id) {
+            pedirConfirmacao(
+                'Excluir Movimentação',
+                'Deseja realmente excluir este lançamento?',
+                () => {
+                    estado.movimentacoes = estado.movimentacoes.filter(m => m.id !== id);
+                    persistirDados();
+                    atualizarInterface();
+                    renderizarAcertos();
+                    mostrarToast('Movimentação excluída.', '🗑️');
+                }
+            );
+        }
+
+        function alternarStatusEntrega(id) {
+            const mov = estado.movimentacoes.find(m => m.id === id);
+            if (mov && mov.tipo === 'entrega') {
+                mov.status = mov.status === 'pago' ? 'pendente' : 'pago';
+                persistirDados();
+                atualizarInterface();
+                renderizarAcertos();
+                mostrarToast(mov.status === 'pago' ? 'Marcado como Pago!' : 'Marcado como Pendente!');
+            }
+        }
+
+        function quitarTodasDaLoja(lojaEncoded) {
+            const lojaNome = decodeURIComponent(lojaEncoded);
+            const escopo = document.getElementById('acerto-escopo').value;
+            const dataSel = getDataSelecionada();
+
+            pedirConfirmacao(
+                `Quitar ${lojaNome}`,
+                `Confirmar o recebimento de todas as entregas pendentes de "${lojaNome}"?`,
+                () => {
+                    estado.movimentacoes.forEach(m => {
+                        if (m.tipo === 'entrega' && m.status === 'pendente' && m.loja === lojaNome) {
+                            if (escopo === 'todos' || m.data === dataSel) {
+                                m.status = 'pago';
+                            }
+                        }
+                    });
+                    persistirDados();
+                    atualizarInterface();
+                    renderizarAcertos();
+                    mostrarToast(`Acerto de ${lojaNome} concluído!`);
+                }
+            );
+        }
+
+        function copiarCobrancaLoja(lojaEncoded) {
+            const lojaNome = decodeURIComponent(lojaEncoded);
+            const escopo = document.getElementById('acerto-escopo').value;
+            const dataSel = getDataSelecionada();
+
+            const itens = estado.movimentacoes.filter(m => {
+                if (m.tipo !== 'entrega' || m.status !== 'pendente' || m.loja !== lojaNome) return false;
+                if (escopo === 'dia' && m.data !== dataSel) return false;
+                return true;
+            });
+
+            if (itens.length === 0) return;
+
+            const total = itens.reduce((acc, i) => acc + i.valor, 0);
+            const listaTexto = itens.map((i, idx) => `${idx + 1}. ${i.data.split('-').reverse().slice(0,2).join('/')} (${i.hora}) → ${i.entregue}: *R$ ${i.valor.toFixed(2).replace('.', ',')}*`).join('\n');
+
+            let pixInfo = '';
+            if (estado.pix && estado.pix.chave) {
+                pixInfo = `\n\n💠 *Dados para Pix:*\n• ${estado.pix.tipo}: ${estado.pix.chave}\n• Titular: ${estado.pix.titular || '-'}`;
+            }
+
+            const msg = `🛵 *Fechamento de Entregas — ${lojaNome}*\n\n${listaTexto}\n\n📦 *Qtd:* ${itens.length} entrega(s)\n💰 *Total a Pagar:* R$ ${total.toFixed(2).replace('.', ',')}${pixInfo}`;
+
+            copiarTextoParaAreaDeTransferencia(msg, `Cobrança de ${lojaNome} copiada!`);
+        }
+
+        function filtrarExtrato(filtro) {
+            filtroAtual = filtro;
+            ['todos', 'entrega', 'saida'].forEach(f => {
+                const btn = document.getElementById(`filtro-${f}`);
+                btn.className = (f === filtro) ? "px-2.5 py-1 rounded-lg bg-slate-800 text-white" : "px-2.5 py-1 rounded-lg text-slate-400";
+            });
+            renderizarMovimentacoes();
+        }
+
+        function renderizarMovimentacoes() {
+            const dataSel = getDataSelecionada();
+            const container = document.getElementById('lista-movimentacoes');
+            container.innerHTML = '';
+
+            const movs = estado.movimentacoes.filter(m => {
+                if (m.data !== dataSel) return false;
+                if (filtroAtual === 'entrega' && m.tipo !== 'entrega') return false;
+                if (filtroAtual === 'saida' && m.tipo !== 'gasolina' && m.tipo !== 'sangria') return false;
+                return true;
+            });
+
+            if (movs.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 bg-slate-900/40 rounded-2xl border border-slate-800/60"><p class="text-xs text-slate-500">Nenhuma movimentação nesta data.</p></div>`;
+                return;
+            }
+
+            movs.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-3";
+
+                if (m.tipo === 'entrega') {
+                    const isPago = m.status === 'pago';
+                    const origemInfo = (m.coletado && m.coletado !== m.loja) ? `${m.coletado} &rarr; ${m.entregue}` : `&rarr; ${m.entregue}`;
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">📦</div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-xs font-bold text-white truncate">${m.loja}</h4>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${isPago ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${isPago ? 'Pago' : 'Pendente'}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 truncate">${origemInfo}</p>
+                                <span class="text-[10px] text-slate-500">${m.hora} • ${m.metodo}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-sm font-extrabold text-emerald-400">R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                            <button onclick="alternarStatusEntrega('${m.id}')" title="Alternar Pago/Pendente" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🔄</button>
+                            <button onclick="excluirMovimentacao('${m.id}')" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400">✕</button>
+                        </div>
+                    `;
+                } else {
+                    const isGas = m.tipo === 'gasolina';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl ${isGas ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'} border flex items-center justify-center shrink-0">${isGas ? '⛽' : '💸'}</div>
+                            <div class="min-w-0">
+                                <h4 class="text-xs font-bold text-white truncate">${m.obs}</h4>
+                                <p class="text-[11px] text-slate-400">${isGas ? 'Gasto' : 'Sangria'}</p>
+                                <span class="text-[10px] text-slate-500">${m.hora}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-sm font-extrabold ${isGas ? 'text-rose-400' : 'text-indigo-400'}">- R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                            <button onclick="excluirMovimentacao('${m.id}')" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400">✕</button>
+                        </div>
+                    `;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarAcertos() {
+            const escopo = document.getElementById('acerto-escopo').value;
+            const container = document.getElementById('lista-acertos-lojas');
+            container.innerHTML = '';
+
+            const pendentes = estado.movimentacoes.filter(m => {
+                if (m.tipo !== 'entrega' || m.status !== 'pendente') return false;
+                if (escopo === 'dia' && m.data !== getDataSelecionada()) return false;
+                return true;
+            });
+
+            if (pendentes.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 bg-slate-900 border border-slate-800 rounded-2xl"><span class="text-2xl block mb-2">🎉</span><p class="text-sm font-bold text-slate-300">Nenhum acerto pendente!</p></div>`;
+                return;
+            }
+
+            const agrupado = {};
+            pendentes.forEach(p => {
+                if (!agrupado[p.loja]) agrupado[p.loja] = [];
+                agrupado[p.loja].push(p);
+            });
+
+            Object.keys(agrupado).forEach(loja => {
+                const itens = agrupado[loja];
+                const totalLoja = itens.reduce((acc, i) => acc + i.valor, 0);
+                const lojaEncoded = encodeURIComponent(loja);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-amber-500/30 rounded-2xl p-4 space-y-3";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-white">${loja}</h3>
+                            <p class="text-xs text-amber-400 font-bold mt-0.5">${itens.length} entrega(s) pendente(s)</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-base font-extrabold text-amber-300">R$ ${totalLoja.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="copiarCobrancaLoja('${lojaEncoded}')" class="bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-bold py-2 px-3 rounded-xl text-xs transition active:scale-95">
+                            📋 Copiar c/ Pix
+                        </button>
+                        <button onclick="quitarTodasDaLoja('${lojaEncoded}')" class="bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold py-2 px-3 rounded-xl text-xs transition active:scale-95">
+                            ✅ Quitar Tudo
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+                        ${itens.map(i => `
+                            <div class="flex items-center justify-between text-slate-300 py-1">
+                                <span>${i.data.split('-').reverse().slice(0,2).join('/')} • &rarr; ${i.entregue}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-white">R$ ${i.valor.toFixed(2).replace('.', ',')}</span>
+                                    <button onclick="alternarStatusEntrega('${i.id}')" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Pago</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function atualizarInterface() {
+            const dataSel = getDataSelecionada();
+            const abertura = estado.aberturas[dataSel] || { caixaInicial: 0, kmInicial: '', kmFinal: '' };
+
+            document.getElementById('caixa-inicial').value = abertura.caixaInicial || '';
+            document.getElementById('km-inicial').value = abertura.kmInicial || '';
+            document.getElementById('km-final').value = abertura.kmFinal || '';
+
+            const movsDia = estado.movimentacoes.filter(m => m.data === dataSel);
+            const qtdEntregas = movsDia.filter(m => m.tipo === 'entrega').length;
+            const bruto = movsDia.filter(m => m.tipo === 'entrega').reduce((acc, m) => acc + m.valor, 0);
+            const gastos = movsDia.filter(m => m.tipo === 'gasolina').reduce((acc, m) => acc + m.valor, 0);
+            const sangrias = movsDia.filter(m => m.tipo === 'sangria').reduce((acc, m) => acc + m.valor, 0);
+
+            const entregasPagas = movsDia.filter(m => m.tipo === 'entrega' && m.status === 'pago');
+            const totalPix = entregasPagas.filter(m => m.metodo === 'Pix').reduce((acc, m) => acc + m.valor, 0);
+            const totalDinheiro = entregasPagas.filter(m => m.metodo === 'Dinheiro').reduce((acc, m) => acc + m.valor, 0);
+
+            const lucroLiquido = bruto - gastos;
+            const emMaos = (abertura.caixaInicial || 0) + totalDinheiro - gastos - sangrias;
+
+            const pendentesGeral = estado.movimentacoes.filter(m => m.tipo === 'entrega' && m.status === 'pendente');
+            const valorPendente = pendentesGeral.reduce((acc, m) => acc + m.valor, 0);
+
+            let kmRodados = 0;
+            if (abertura.kmInicial && abertura.kmFinal) {
+                kmRodados = Math.max(0, parseFloat(abertura.kmFinal) - parseFloat(abertura.kmInicial));
+            }
+            const rsKmBruto = kmRodados > 0 ? (bruto / kmRodados) : 0;
+            const rsKmLiquido = kmRodados > 0 ? (lucroLiquido / kmRodados) : 0;
+
+            document.getElementById('stat-qtd-entregas').innerText = `${qtdEntregas} ${qtdEntregas === 1 ? 'entrega' : 'entregas'}`;
+            document.getElementById('stat-bruto').innerText = `R$ ${bruto.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-lucro-liquido').innerText = `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-pix-total').innerText = `R$ ${totalPix.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-dinheiro-total').innerText = `R$ ${totalDinheiro.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-em-maos').innerText = `R$ ${emMaos.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-pendente').innerText = `R$ ${valorPendente.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-pendente-qtd').innerText = `${pendentesGeral.length} em aberto`;
+            document.getElementById('stat-gastos').innerText = `R$ ${gastos.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-sangrias').innerText = `R$ ${sangrias.toFixed(2).replace('.', ',')}`;
+            document.getElementById('badge-km-stats').innerText = `${kmRodados} km rodados`;
+            document.getElementById('stat-rs-km-bruto').innerText = `R$ ${rsKmBruto.toFixed(2).replace('.', ',')}/km`;
+            document.getElementById('stat-rs-km-liquido').innerText = `R$ ${rsKmLiquido.toFixed(2).replace('.', ',')}/km`;
+
+            const badgeNav = document.getElementById('nav-badge-pendente');
+            if (pendentesGeral.length > 0) badgeNav.classList.remove('hidden');
+            else badgeNav.classList.add('hidden');
+
+            renderizarMovimentacoes();
+        }
+
+        function copiarResumoWhatsApp() {
+            const dataSel = getDataSelecionada();
+            const abertura = estado.aberturas[dataSel] || { caixaInicial: 0, kmInicial: '', kmFinal: '' };
+            const movsDia = estado.movimentacoes.filter(m => m.data === dataSel);
+            
+            const qtdEntregas = movsDia.filter(m => m.tipo === 'entrega').length;
+            const bruto = movsDia.filter(m => m.tipo === 'entrega').reduce((acc, m) => acc + m.valor, 0);
+            const gastos = movsDia.filter(m => m.tipo === 'gasolina').reduce((acc, m) => acc + m.valor, 0);
+            const sangrias = movsDia.filter(m => m.tipo === 'sangria').reduce((acc, m) => acc + m.valor, 0);
+            const lucro = bruto - gastos;
+
+            const entregasPagas = movsDia.filter(m => m.tipo === 'entrega' && m.status === 'pago');
+            const totalPix = entregasPagas.filter(m => m.metodo === 'Pix').reduce((acc, m) => acc + m.valor, 0);
+            const totalDinheiro = entregasPagas.filter(m => m.metodo === 'Dinheiro').reduce((acc, m) => acc + m.valor, 0);
+            
+            let kmInfo = '';
+            if (abertura.kmInicial && abertura.kmFinal) {
+                const rodados = Math.max(0, parseFloat(abertura.kmFinal) - parseFloat(abertura.kmInicial));
+                const rsLqKm = rodados > 0 ? (lucro / rodados).toFixed(2).replace('.', ',') : '0,00';
+                kmInfo = `🏍️ *KM Rodados:* ${rodados} km (R$ ${rsLqKm}/km líq)\n`;
+            }
+
+            let pixInfo = '';
+            if (estado.pix && estado.pix.chave) {
+                pixInfo = `\n💳 *Dados para Pix:*\n• ${estado.pix.tipo}: ${estado.pix.chave}\n• Titular: ${estado.pix.titular || '-'}\n`;
+            }
+
+            const texto = `📊 *Resumo BaseMoto - ${dataSel.split('-').reverse().join('/')}*
+
+📦 *Total Entregas:* ${qtdEntregas}
+💰 *Valor Bruto:* R$ ${bruto.toFixed(2).replace('.', ',')}
+💠 *Recebido em Pix:* R$ ${totalPix.toFixed(2).replace('.', ',')}
+💵 *Recebido em Dinheiro:* R$ ${totalDinheiro.toFixed(2).replace('.', ',')}
+⛽ *Gasolina / Gastos:* R$ ${gastos.toFixed(2).replace('.', ',')}
+💸 *Sangrias:* R$ ${sangrias.toFixed(2).replace('.', ',')}
+💵 *Lucro Líquido:* R$ ${lucro.toFixed(2).replace('.', ',')}
+${kmInfo}${pixInfo}
+_Gerado via BaseMoto_`;
+
+            copiarTextoParaAreaDeTransferencia(texto, 'Resumo copiado com Pix e valores!');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            carregarDados();
+            inicializarTabelaPrecos();
+            document.getElementById('date-selector').value = getHojeISO();
+            atualizarInterface();
+            verificarLicencaSalva();
+        });
+    </script>
+</body>
+</html>
