@@ -243,9 +243,12 @@
                         <img id="preview-icone-atual" src="icone.png?v=2" onerror="this.style.display='none'" class="w-10 h-10 rounded-xl border border-slate-700 object-cover">
                     </div>
                     <label class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                        <span>📁</span> Escolher Foto do Ícone no Aparelho
+                        <span>📁</span> 1. Escolher Foto do Ícone no PC/Celular
                         <input type="file" accept="image/*" onchange="definirIconePersonalizado(event)" class="hidden">
                     </label>
+                    <button type="button" id="btn-copiar-html-icone" onclick="copiarHtmlComIconeCravado()" class="hidden w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg">
+                        <span>📋</span> 2. Copiar HTML Completo c/ Este Ícone Cravado
+                    </button>
                 </div>
             </div>
         </div>
@@ -2401,15 +2404,22 @@ _Gerado via BaseMoto_`;
         }
 
         // ==================== MOTOR DE ÍCONE PARA IPHONE (SAFARI) ====================
+        let ultimoIconeDataUrl = '';
+
         function aplicarDataUrlNoIcone(dataUrl) {
+            ultimoIconeDataUrl = dataUrl;
             const appleLink = document.getElementById('apple-icon-link');
             const favLink = document.getElementById('favicon-link');
             const previewImg = document.getElementById('preview-icone-atual');
+            const btnCopiarHtml = document.getElementById('btn-copiar-html-icone');
             if (appleLink) appleLink.href = dataUrl;
             if (favLink) favLink.href = dataUrl;
             if (previewImg) {
                 previewImg.src = dataUrl;
                 previewImg.style.display = 'block';
+            }
+            if (btnCopiarHtml) {
+                btnCopiarHtml.classList.remove('hidden');
             }
         }
 
@@ -2419,15 +2429,15 @@ _Gerado via BaseMoto_`;
                 canvas.width = 180;
                 canvas.height = 180;
                 const ctx = canvas.getContext('2d');
-                // Fundo escuro sólido (iPhone exige ícone sem transparência)
+                // Fundo escuro sólido (iPhone exige ícone 180x180 sem transparência)
                 ctx.fillStyle = '#090d16';
                 ctx.fillRect(0, 0, 180, 180);
                 ctx.drawImage(imgElement, 0, 0, 180, 180);
-                const dataUrl = canvas.toDataURL('image/png');
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
                 aplicarDataUrlNoIcone(dataUrl);
                 if (salvarLocal) {
                     localStorage.setItem('basemoto_custom_icon', dataUrl);
-                    mostrarToast('Ícone aplicado! Agora adicione à Tela de Início no Safari.');
+                    mostrarToast('Foto pronta! Agora clique no botão verde abaixo para copiar o HTML.');
                 }
             } catch (e) {
                 console.error(e);
@@ -2443,18 +2453,43 @@ _Gerado via BaseMoto_`;
                 img.onload = () => converterImagemParaIconeApple(img, true);
                 img.src = e.target.result;
             };
-            reader.readAsText ? reader.readAsDataURL(file) : null;
+            reader.readAsDataURL(file);
+        }
+
+        function copiarHtmlComIconeCravado() {
+            if (!ultimoIconeDataUrl) {
+                mostrarToast('Escolha uma foto primeiro!', '⚠️');
+                return;
+            }
+            let htmlCompleto = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            // Substitui o href do apple-touch-icon e do favicon pelo código direto da sua imagem
+            htmlCompleto = htmlCompleto.replace(
+                /<link id="apple-icon-link"[^>]*>/i,
+                `<link id="apple-icon-link" rel="apple-touch-icon" sizes="180x180" href="${ultimoIconeDataUrl}">`
+            );
+            htmlCompleto = htmlCompleto.replace(
+                /<link id="favicon-link"[^>]*>/i,
+                `<link id="favicon-link" rel="icon" type="image/jpeg" sizes="180x180" href="${ultimoIconeDataUrl}">`
+            );
+            copiarTextoParaAreaDeTransferencia(htmlCompleto, 'HTML completo com seu ícone copiado! Cole no index.html do GitHub.');
         }
 
         function inicializarIconeAutomatico() {
-            // 1. Verifica se já existe um ícone salvo localmente
+            const appleLink = document.getElementById('apple-icon-link');
+            // Se o HTML já estiver com o ícone cravado no href, usa ele direto
+            if (appleLink && appleLink.getAttribute('href') && appleLink.getAttribute('href').startsWith('data:image')) {
+                aplicarDataUrlNoIcone(appleLink.getAttribute('href'));
+                return;
+            }
+
+            // Verifica se já existe um ícone salvo localmente
             const salvo = localStorage.getItem('basemoto_custom_icon');
             if (salvo) {
                 aplicarDataUrlNoIcone(salvo);
                 return;
             }
 
-            // 2. Tenta carregar do repositório qualquer variação comum de nome de arquivo
+            // Tenta carregar do repositório qualquer variação comum de nome de arquivo
             const possiveisNomes = ['icone.png', 'Icone.png', 'ICONE.PNG', 'icone.jpg', 'icone.jpeg', 'logo.png'];
             let indice = 0;
 
