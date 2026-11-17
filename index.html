@@ -203,11 +203,29 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-2 pt-1">
-                        <input type="text" id="adm-cloud-bin" placeholder="ID do Banco (Opcional - Automático)" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
-                        <input type="password" id="adm-cloud-key" placeholder="Chave Master JSONBin.io (Opcional)" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
+                        <input type="text" id="adm-cloud-bin" placeholder="ID do Banco (Gerado automaticamente)" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
+                        <input type="password" id="adm-cloud-key" placeholder="Cole sua X-Master-Key do JSONBin.io aqui" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 pt-1">
+                        <button type="button" onclick="puxarDadosDaNuvemAdmin(true)" class="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-extrabold py-2 px-2 rounded-xl text-[10px] transition active:scale-95 flex items-center justify-center gap-1">
+                            📥 Baixar da Nuvem
+                        </button>
+                        <button type="button" onclick="sincronizarNuvemAdmin(true)" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-extrabold py-2 px-2 rounded-xl text-[10px] transition active:scale-95 flex items-center justify-center gap-1">
+                            📤 Enviar p/ Nuvem
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800/80">
+                        <button type="button" onclick="copiarTokenConexaoAdmin()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2 px-2 rounded-xl text-[10px] transition">
+                            🔗 Copiar Conexão (Celular/PC)
+                        </button>
+                        <button type="button" onclick="colarTokenConexaoAdmin()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold py-2 px-2 rounded-xl text-[10px] transition">
+                            📋 Colar Conexão Aqui
+                        </button>
                     </div>
                     <p class="text-[10px] text-slate-500 leading-relaxed">
-                        💡 Ao remover ou clicar em <b>Bloquear</b> num membro abaixo, o acesso dele é cortado automaticamente!
+                        💡 Com a nuvem ativa, tudo o que você cadastrar no celular aparece no PC na hora (e vice-versa)!
                     </p>
                 </div>
 
@@ -838,11 +856,111 @@
                     badge.innerText = 'Nuvem Ativa ☁️';
                     badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300';
                 }
+                if (forcarUpload) {
+                    mostrarToast('Lista de clientes enviada para a nuvem!', '☁️');
+                }
             } catch (e) {
                 if (badge) {
                     badge.innerText = 'Erro na Nuvem';
                     badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
                 }
+            }
+        }
+
+        // Busca os clientes da nuvem para igualar PC e Celular automaticamente
+        async function puxarDadosDaNuvemAdmin(mostrarAviso = false) {
+            const badge = document.getElementById('badge-status-nuvem');
+            if (!cloudConfig.binId) {
+                if (mostrarAviso) mostrarToast('Configure a Chave JSONBin primeiro!', '⚠️');
+                return;
+            }
+            try {
+                if (badge) badge.innerText = 'Buscando...';
+                const headers = {};
+                if (cloudConfig.apiKey) headers['X-Master-Key'] = cloudConfig.apiKey;
+                const resp = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, { headers });
+                if (!resp.ok) throw new Error('Falha ao buscar');
+                const json = await resp.json();
+                const record = json.record;
+                if (record) {
+                    // Mescla inteligente: mantém clientes locais que ainda não subiram e atualiza com os da nuvem
+                    const mapaClientes = new Map();
+                    (estado.clientesAdmin || []).forEach(c => mapaClientes.set(c.whats, c));
+                    (record.clientesAdmin || []).forEach(c => mapaClientes.set(c.whats, c));
+                    estado.clientesAdmin = Array.from(mapaClientes.values());
+
+                    const setRevogados = new Set([...(estado.revogados || []), ...(record.revogados || [])]);
+                    estado.revogados = Array.from(setRevogados);
+
+                    persistirDados();
+                    renderizarClientesAdmin();
+                    if (badge) {
+                        badge.innerText = 'Sincronizado ☁️';
+                        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300';
+                    }
+                    if (mostrarAviso) mostrarToast('Clientes sincronizados entre PC e Celular!', '🔄');
+                }
+            } catch (e) {
+                if (mostrarAviso) mostrarToast('Erro ao baixar da nuvem. Verifique o ID e a Chave.', '⚠️');
+            }
+        }
+
+        // Exporta um pacote único com a configuração da nuvem + os clientes atuais para colar no outro dispositivo
+        function copiarTokenConexaoAdmin() {
+            const pacote = {
+                binId: cloudConfig.binId || '',
+                apiKey: cloudConfig.apiKey || '',
+                clientesAdmin: estado.clientesAdmin || [],
+                revogados: estado.revogados || []
+            };
+            const token = 'BMCLOUD:' + btoa(unescape(encodeURIComponent(JSON.stringify(pacote))));
+            copiarTextoParaAreaDeTransferencia(token, 'Conexão copiada! Envie no seu WhatsApp e clique em "Colar Conexão" no PC.');
+        }
+
+        async function colarTokenConexaoAdmin() {
+            let texto = '';
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    texto = await navigator.clipboard.readText();
+                }
+            } catch (e) {}
+
+            if (!texto || !texto.startsWith('BMCLOUD:')) {
+                texto = prompt('Cole aqui o código de conexão que você copiou no celular (começa com BMCLOUD:):') || '';
+            }
+
+            if (!texto.trim().startsWith('BMCLOUD:')) {
+                mostrarToast('Código de conexão inválido!', '⚠️');
+                return;
+            }
+
+            try {
+                const base64 = texto.trim().replace('BMCLOUD:', '');
+                const pacote = JSON.parse(decodeURIComponent(escape(atob(base64))));
+
+                if (pacote.binId || pacote.apiKey) {
+                    cloudConfig = { binId: pacote.binId || '', apiKey: pacote.apiKey || '' };
+                    localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
+                    carregarConfigNuvem();
+                }
+
+                if (Array.isArray(pacote.clientesAdmin)) {
+                    const mapa = new Map();
+                    (estado.clientesAdmin || []).forEach(c => mapa.set(c.whats, c));
+                    pacote.clientesAdmin.forEach(c => mapa.set(c.whats, c));
+                    estado.clientesAdmin = Array.from(mapa.values());
+                }
+
+                if (Array.isArray(pacote.revogados)) {
+                    estado.revogados = Array.from(new Set([...(estado.revogados || []), ...pacote.revogados]));
+                }
+
+                persistirDados();
+                renderizarClientesAdmin();
+                await puxarDadosDaNuvemAdmin(false);
+                mostrarToast('PC e Celular sincronizados com sucesso!', '🚀');
+            } catch (err) {
+                mostrarToast('Não foi possível ler o código de conexão.', '⚠️');
             }
         }
 
@@ -1163,6 +1281,10 @@
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-painel-box').classList.remove('hidden');
                 renderizarClientesAdmin();
+                // Sempre que abrir o Painel Admin no PC ou Celular, já busca a lista atualizada da nuvem!
+                if (cloudConfig.binId) {
+                    puxarDadosDaNuvemAdmin(false);
+                }
             } else {
                 mostrarToast('Senha de administrador incorreta!', '🔒');
             }
