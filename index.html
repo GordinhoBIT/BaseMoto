@@ -100,9 +100,9 @@
 
             <div class="pt-3 border-t border-slate-800 text-center space-y-2">
                 <p class="text-[11px] text-slate-500">Ainda não tem sua chave de acesso?</p>
-                <button type="button" onclick="solicitarChaveNoWhatsApp()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                <a href="https://w.app/y3bcuj" target="_blank" rel="noopener noreferrer" onclick="solicitarChaveNoWhatsApp()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
                     <span>📲</span> Solicitar Código de Acesso
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -166,12 +166,15 @@
 
                     <div>
                         <label class="text-[11px] font-bold text-slate-400 uppercase block mb-1">Plano da Licença</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" onclick="selecionarPlanoAdmin('MENSAL')" id="btn-plano-mensal" class="py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-xs transition">
-                                📅 Mensal (30 dias)
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button type="button" onclick="selecionarPlanoAdmin('TESTE')" id="btn-plano-teste" class="py-2.5 px-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-[11px] transition">
+                                ⏳ Teste (3d)
                             </button>
-                            <button type="button" onclick="selecionarPlanoAdmin('VITALICIO')" id="btn-plano-vitalicio" class="py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition">
-                                ♾️ Vitalício (Sem venc.)
+                            <button type="button" onclick="selecionarPlanoAdmin('MENSAL')" id="btn-plano-mensal" class="py-2.5 px-2 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-[11px] transition">
+                                📅 Mensal (30d)
+                            </button>
+                            <button type="button" onclick="selecionarPlanoAdmin('VITALICIO')" id="btn-plano-vitalicio" class="py-2.5 px-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-[11px] transition">
+                                ♾️ Vitalício
                             </button>
                         </div>
                     </div>
@@ -182,9 +185,30 @@
                             DIGITE O WHATSAPP
                         </div>
                         <button type="button" onclick="salvarECopiarVendaAdmin()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs transition active:scale-95 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10">
-                            <span>✅</span> Salvar Membro & Copiar Código p/ WhatsApp
+                            <span>✅</span> Salvar na Nuvem & Copiar Código
                         </button>
                     </div>
+                </div>
+
+                <!-- Sincronização na Nuvem (JSONBin / Controle Remoto de Acessos) -->
+                <div class="bg-slate-950 border border-sky-500/30 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>☁️</span> Controle Remoto na Nuvem
+                            </h4>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Bloqueie/libere clientes à distância em tempo real</p>
+                        </div>
+                        <span id="badge-status-nuvem" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Sincronizado</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2 pt-1">
+                        <input type="text" id="adm-cloud-bin" placeholder="ID do Banco (Opcional - Automático)" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
+                        <input type="password" id="adm-cloud-key" placeholder="Chave Master JSONBin.io (Opcional)" onchange="salvarConfigNuvemAdmin()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 focus:outline-none focus:border-sky-500">
+                    </div>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">
+                        💡 Ao remover ou clicar em <b>Bloquear</b> num membro abaixo, o acesso dele é cortado automaticamente!
+                    </p>
                 </div>
 
                 <!-- Lista de Clientes / Controle de Mensalidades -->
@@ -252,6 +276,7 @@
                         <span id="badge-plano-header" class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PRO</span>
                     </div>
                     <p id="subtitulo-usuario-header" class="text-[11px] text-slate-400 font-medium">Controle da Base</p>
+                    <p id="validade-usuario-header" class="text-[10px] text-emerald-400 font-bold leading-tight"></p>
                 </div>
             </div>
 
@@ -274,6 +299,22 @@
 
     <!-- Conteúdo Principal -->
     <main class="max-w-lg mx-auto px-4 pt-4 space-y-5">
+
+        <!-- Banner de Aviso de Vencimento Próximo (Faltando <= 3 dias) -->
+        <div id="banner-vencimento-proximo" class="hidden bg-gradient-to-r from-amber-500/20 via-rose-500/20 to-amber-500/20 border border-amber-500/50 rounded-2xl p-3.5 shadow-lg">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl animate-bounce">⚠️</span>
+                    <div>
+                        <h4 id="titulo-banner-vencimento" class="text-xs font-extrabold text-amber-300 uppercase">Seu plano vence em 3 dias!</h4>
+                        <p id="desc-banner-vencimento" class="text-[11px] text-slate-200 mt-0.5">Renove sua assinatura para não perder o acesso na base.</p>
+                    </div>
+                </div>
+                <a href="https://w.app/4z0ydz" target="_blank" rel="noopener noreferrer" onclick="solicitarRenovacaoRapida()" class="shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3 py-2 rounded-xl transition active:scale-95">
+                    Renovar
+                </a>
+            </div>
+        </div>
 
         <!-- ABA 1: PAINEL DO DIA -->
         <section id="view-dashboard" class="space-y-5">
@@ -547,13 +588,14 @@
     <div id="modal-entrega" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
         <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up max-h-[94vh] overflow-y-auto">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+                <h3 id="titulo-modal-entrega" class="text-lg font-extrabold text-white flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Nova Entrega
                 </h3>
                 <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
             </div>
 
             <form onsubmit="salvarEntrega(event)" class="space-y-3.5">
+                <input type="hidden" id="entrega-edit-id" value="">
                 <!-- Nome da Loja / Estabelecimento (100% Manual, sem datalist) -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
@@ -629,7 +671,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-4 rounded-2xl text-base shadow-lg transition active:scale-[0.98]">
+                <button type="submit" id="btn-submit-entrega" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-4 rounded-2xl text-base shadow-lg transition active:scale-[0.98]">
                     Salvar Entrega
                 </button>
             </form>
@@ -640,10 +682,11 @@
     <div id="modal-gasolina" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
         <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-extrabold text-white flex items-center gap-2"><span>⛽</span> Abastecimento / Gasto</h3>
+                <h3 id="titulo-modal-gasolina" class="text-lg font-extrabold text-white flex items-center gap-2"><span>⛽</span> Abastecimento / Gasto</h3>
                 <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
             </div>
             <form onsubmit="salvarSaida(event, 'gasolina')" class="space-y-4">
+                <input type="hidden" id="gasolina-edit-id" value="">
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Valor Gasto (R$)</label>
                     <input type="number" step="0.01" min="0.5" id="gasolina-valor" inputmode="decimal" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-xl px-4 py-3 text-xl font-extrabold text-white focus:outline-none">
@@ -652,7 +695,7 @@
                     <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Descrição</label>
                     <input type="text" id="gasolina-obs" value="Gasolina" class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
                 </div>
-                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Lançar Gasto</button>
+                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Salvar Gasto</button>
             </form>
         </div>
     </div>
@@ -661,10 +704,11 @@
     <div id="modal-sangria" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center">
         <div class="bg-slate-900 border-t sm:border border-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-slide-up">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-extrabold text-white flex items-center gap-2"><span>💸</span> Realizar Sangria</h3>
+                <h3 id="titulo-modal-sangria" class="text-lg font-extrabold text-white flex items-center gap-2"><span>💸</span> Realizar Sangria</h3>
                 <button type="button" onclick="fecharModais()" class="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white">✕</button>
             </div>
             <form onsubmit="salvarSaida(event, 'sangria')" class="space-y-4">
+                <input type="hidden" id="sangria-edit-id" value="">
                 <div>
                     <label class="text-xs font-bold text-slate-400 uppercase block mb-1.5">Valor da Retirada (R$)</label>
                     <input type="number" step="0.01" min="0.5" id="sangria-valor" inputmode="decimal" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-xl font-extrabold text-white focus:outline-none">
@@ -673,7 +717,7 @@
                     <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Motivo / Destino</label>
                     <input type="text" id="sangria-obs" placeholder="Ex: Guardado em casa" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
                 </div>
-                <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Confirmar Sangria</button>
+                <button type="submit" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-extrabold py-4 rounded-2xl text-base shadow-lg transition">Salvar Sangria</button>
             </form>
         </div>
     </div>
@@ -698,7 +742,7 @@
     <script>
         const STORAGE_KEY = 'basemoto_dados_v6';
         const LICENCA_KEY = 'basemoto_licenca_v1';
-        const CLIENTES_ADMIN_KEY = 'basemoto_clientes_admin_v1';
+        const CLOUD_CONFIG_KEY = 'basemoto_cloud_cfg_v1';
         const SENHA_ADMIN_MESTRA = '2026'; // Senha secreta do dono (5 toques na logo da moto)
         const SEGREDO_HASH = 'BM_ARAPIRACA_2026_PRO';
 
@@ -708,13 +752,123 @@
             pix: { tipo: 'CPF', chave: '', titular: '' },
             ultimaOrigem: '',
             ultimaLoja: '',
-            clientesAdmin: []
+            clientesAdmin: [],
+            revogados: [] // Lista de WhatsApps ou códigos bloqueados/excluídos pelo admin
         };
+        let cloudConfig = { binId: '', apiKey: '' };
         let filtroAtual = 'todos';
         let filtroAdminAtual = 'todos';
         let planoAdminSelecionado = 'MENSAL';
         let contadorToquesAdmin = 0;
         let timerToquesAdmin = null;
+
+        // ==================== SINCRONIZAÇÃO DE LICENÇAS NA NUVEM (TEMPO REAL) ====================
+        function carregarConfigNuvem() {
+            try {
+                const salvo = localStorage.getItem(CLOUD_CONFIG_KEY);
+                if (salvo) cloudConfig = JSON.parse(salvo);
+                const inBin = document.getElementById('adm-cloud-bin');
+                const inKey = document.getElementById('adm-cloud-key');
+                if (inBin) inBin.value = cloudConfig.binId || '';
+                if (inKey) inKey.value = cloudConfig.apiKey || '';
+            } catch (e) {}
+        }
+
+        function salvarConfigNuvemAdmin() {
+            const binId = (document.getElementById('adm-cloud-bin')?.value || '').trim();
+            const apiKey = (document.getElementById('adm-cloud-key')?.value || '').trim();
+            cloudConfig = { binId, apiKey };
+            localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
+            sincronizarNuvemAdmin(true);
+        }
+
+        async function sincronizarNuvemAdmin(forcarUpload = false) {
+            const badge = document.getElementById('badge-status-nuvem');
+            if (!cloudConfig.apiKey) {
+                if (badge) {
+                    badge.innerText = 'Modo Local + Chave';
+                    badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400';
+                }
+                return;
+            }
+
+            try {
+                if (badge) badge.innerText = 'Sincronizando...';
+                // Se já tem Bin ID e queremos atualizar a nuvem
+                if (cloudConfig.binId && forcarUpload) {
+                    await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': cloudConfig.apiKey
+                        },
+                        body: JSON.stringify({
+                            clientesAdmin: estado.clientesAdmin,
+                            revogados: estado.revogados || [],
+                            atualizadoEm: new Date().toISOString()
+                        })
+                    });
+                } else if (!cloudConfig.binId && forcarUpload) {
+                    // Cria o banco automaticamente na primeira vez que colar a chave
+                    const resp = await fetch('https://api.jsonbin.io/v3/b', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': cloudConfig.apiKey,
+                            'X-Bin-Private': 'false'
+                        },
+                        body: JSON.stringify({
+                            clientesAdmin: estado.clientesAdmin,
+                            revogados: estado.revogados || [],
+                            atualizadoEm: new Date().toISOString()
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data && data.metadata && data.metadata.id) {
+                        cloudConfig.binId = data.metadata.id;
+                        localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
+                        const inBin = document.getElementById('adm-cloud-bin');
+                        if (inBin) inBin.value = cloudConfig.binId;
+                    }
+                }
+                if (badge) {
+                    badge.innerText = 'Nuvem Ativa ☁️';
+                    badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300';
+                }
+            } catch (e) {
+                if (badge) {
+                    badge.innerText = 'Erro na Nuvem';
+                    badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300';
+                }
+            }
+        }
+
+        async function consultarStatusNaNuvemUsuario(whatsUsuario) {
+            if (!cloudConfig.binId) return null;
+            try {
+                const headers = {};
+                if (cloudConfig.apiKey) headers['X-Master-Key'] = cloudConfig.apiKey;
+                const resp = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, { headers });
+                if (!resp.ok) return null;
+                const json = await resp.json();
+                const record = json.record;
+                if (!record) return null;
+
+                if (Array.isArray(record.revogados)) {
+                    estado.revogados = record.revogados;
+                }
+                if (Array.isArray(record.clientesAdmin)) {
+                    estado.clientesAdmin = record.clientesAdmin;
+                    persistirDados();
+                }
+
+                const isRevogado = (record.revogados || []).includes(whatsUsuario);
+                const clienteEncontrado = (record.clientesAdmin || []).find(c => c.whats === whatsUsuario);
+                return { isRevogado, clienteEncontrado };
+            } catch (e) {
+                return null;
+            }
+        }
 
         // ==================== SISTEMA DE LICENCIAMENTO E VENDA ====================
         function limparTelefone(tel) {
@@ -730,13 +884,16 @@
             return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 4);
         }
 
-        // Gera um código vinculado ao WhatsApp do cliente + validade embutida (permite passar data customizada)
+        // Gera um código vinculado ao WhatsApp do cliente + validade embutida (Teste 3d, Mensal 30d ou Vitalício)
         function criarCodigoAtivacao(whatsLimpo, tipoPlano, dataExpCustom = null) {
             if (!whatsLimpo || whatsLimpo.length < 8) return null;
             let blocoData = 'VITA';
-            if (tipoPlano === 'MENSAL') {
+            if (tipoPlano === 'MENSAL' || tipoPlano === 'TESTE') {
                 const expDate = dataExpCustom ? new Date(dataExpCustom) : new Date();
-                if (!dataExpCustom) expDate.setDate(expDate.getDate() + 30);
+                if (!dataExpCustom) {
+                    const diasParaSomar = tipoPlano === 'TESTE' ? 3 : 30;
+                    expDate.setDate(expDate.getDate() + diasParaSomar);
+                }
                 const yy = String(expDate.getFullYear()).slice(-2);
                 const mm = String(expDate.getMonth() + 1).padStart(2, '0');
                 const dd = String(expDate.getDate()).padStart(2, '0');
@@ -785,7 +942,20 @@
 
             // Código mestre rápido caso o dono digite BM-DONO-2026
             if (limpo === 'BM-DONO-2026') {
-                return { valido: true, plano: 'VITALICIO', expiraEm: null };
+                return { valido: true, plano: 'VITALICIO', expiraEm: null, diasRestantes: 9999 };
+            }
+
+            // Verifica se este número ou código foi revogado/excluído pelo Administrador
+            if (Array.isArray(estado.revogados) && (estado.revogados.includes(whatsLimpo) || estado.revogados.includes(limpo))) {
+                return { valido: false, revogada: true, motivo: 'Acesso revogado pelo administrador!' };
+            }
+
+            // Se existe lista de clientes sincronizada e o membro está marcado como bloqueado
+            if (Array.isArray(estado.clientesAdmin) && estado.clientesAdmin.length > 0) {
+                const membro = estado.clientesAdmin.find(c => c.whats === whatsLimpo);
+                if (membro && membro.bloqueado) {
+                    return { valido: false, revogada: true, motivo: 'Acesso suspenso pelo administrador!' };
+                }
             }
 
             const partes = limpo.split('-');
@@ -802,7 +972,7 @@
             }
 
             if (blocoData === 'VITA') {
-                return { valido: true, plano: 'VITALICIO', expiraEm: null };
+                return { valido: true, plano: 'VITALICIO', expiraEm: null, diasRestantes: 9999 };
             }
 
             // Valida data AAMMDD
@@ -814,19 +984,24 @@
             const mes = parseInt(blocoData.slice(2, 4), 10) - 1;
             const dia = parseInt(blocoData.slice(4, 6), 10);
             const expiraDate = new Date(ano, mes, dia, 23, 59, 59);
+            const hoje = new Date();
 
-            if (new Date() > expiraDate) {
+            if (hoje > expiraDate) {
                 return { valido: false, expirada: true, motivo: 'Licença vencida' };
             }
+
+            const diffMs = expiraDate.getTime() - hoje.getTime();
+            const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
             return {
                 valido: true,
                 plano: 'MENSAL',
-                expiraEm: `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`
+                expiraEm: `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${ano}`,
+                diasRestantes
             };
         }
 
-        function verificarLicencaSalva() {
+        async function verificarLicencaSalva() {
             const tela = document.getElementById('tela-licenca');
             const avisoExpirada = document.getElementById('aviso-licenca-expirada');
             try {
@@ -836,6 +1011,26 @@
                     return;
                 }
                 const dadosLic = JSON.parse(salvo);
+
+                // Se houver nuvem configurada, sincroniza antes de validar para cortar removidos ou auto-renovar quem pagou
+                if (cloudConfig.binId && dadosLic.codigo !== 'BM-DONO-2026') {
+                    const nuvemInfo = await consultarStatusNaNuvemUsuario(dadosLic.whats);
+                    if (nuvemInfo) {
+                        if (nuvemInfo.isRevogado || (nuvemInfo.clienteEncontrado && nuvemInfo.clienteEncontrado.bloqueado)) {
+                            localStorage.removeItem(LICENCA_KEY);
+                            avisoExpirada.innerText = '🚫 Seu acesso foi encerrado ou bloqueado pelo administrador.';
+                            avisoExpirada.classList.remove('hidden');
+                            tela.classList.remove('hidden');
+                            return;
+                        }
+                        // Se o admin renovou o código dele na nuvem, atualiza automaticamente sem ele precisar digitar!
+                        if (nuvemInfo.clienteEncontrado && nuvemInfo.clienteEncontrado.codigo !== dadosLic.codigo) {
+                            dadosLic.codigo = nuvemInfo.clienteEncontrado.codigo;
+                            localStorage.setItem(LICENCA_KEY, JSON.stringify(dadosLic));
+                        }
+                    }
+                }
+
                 const resultado = validarCodigoAtivacao(dadosLic.whats, dadosLic.codigo);
 
                 if (resultado.valido) {
@@ -844,7 +1039,13 @@
                 } else {
                     document.getElementById('licenca-nome').value = dadosLic.nome || '';
                     document.getElementById('licenca-whats').value = dadosLic.whats || '';
-                    if (resultado.expirada) avisoExpirada.classList.remove('hidden');
+                    if (resultado.revogada) {
+                        avisoExpirada.innerText = '🚫 Acesso revogado pelo administrador. Solicite uma nova chave.';
+                        avisoExpirada.classList.remove('hidden');
+                    } else if (resultado.expirada) {
+                        avisoExpirada.innerText = '⚠️ Sua licença venceu! Solicite a renovação para liberar o acesso. (Seus dados continuam salvos).';
+                        avisoExpirada.classList.remove('hidden');
+                    }
                     tela.classList.remove('hidden');
                 }
             } catch (e) {
@@ -854,19 +1055,52 @@
 
         function atualizarHeaderLicenca(nome, infoLicenca) {
             const sub = document.getElementById('subtitulo-usuario-header');
+            const valHeader = document.getElementById('validade-usuario-header');
             const badge = document.getElementById('badge-plano-header');
             const statusAba = document.getElementById('status-licenca-aba');
+            const bannerVencimento = document.getElementById('banner-vencimento-proximo');
+            const tituloBanner = document.getElementById('titulo-banner-vencimento');
+            const descBanner = document.getElementById('desc-banner-vencimento');
 
             if (nome && sub) {
                 sub.innerText = `Motoboy: ${nome}`;
             }
+
+            if (bannerVencimento) bannerVencimento.classList.add('hidden');
+
             if (infoLicenca.plano === 'VITALICIO') {
                 if (badge) badge.innerText = 'VIP';
+                if (valHeader) {
+                    valHeader.innerText = '♾️ Plano Vitalício';
+                    valHeader.className = 'text-[10px] text-sky-400 font-bold leading-tight';
+                }
                 if (statusAba) statusAba.innerText = 'Vitalícia ♾️';
             } else if (infoLicenca.expiraEm) {
+                const dias = infoLicenca.diasRestantes;
                 if (badge) badge.innerText = 'PRO';
-                if (statusAba) statusAba.innerText = `Vence em ${infoLicenca.expiraEm}`;
+                if (statusAba) statusAba.innerText = `Vence em ${infoLicenca.expiraEm} (${dias}d)`;
+
+                if (valHeader) {
+                    valHeader.innerText = `📅 Plano até ${infoLicenca.expiraEm} (${dias}d restantes)`;
+                    valHeader.className = dias <= 3
+                        ? 'text-[10px] text-amber-400 font-extrabold leading-tight animate-pulse'
+                        : 'text-[10px] text-emerald-400 font-bold leading-tight';
+                }
+
+                // Notificação automática quando faltar 3 dias ou menos para acabar o plano
+                if (dias <= 3 && bannerVencimento) {
+                    bannerVencimento.classList.remove('hidden');
+                    tituloBanner.innerText = dias === 1
+                        ? `⚠️ Seu plano vence HOJE (${infoLicenca.expiraEm})!`
+                        : `⚠️ Seu plano vence em ${dias} dias (${infoLicenca.expiraEm})!`;
+                    descBanner.innerText = 'Garanta sua renovação para não travar suas entregas.';
+                    mostrarToast(`Atenção: Seu plano vence em ${dias} dia(s)!`, '⏳');
+                }
             }
+        }
+
+        function solicitarRenovacaoRapida() {
+            window.open('https://w.app/4z0ydz', '_blank');
         }
 
         function ativarLicencaUsuario(e) {
@@ -878,9 +1112,13 @@
 
             const validacao = validarCodigoAtivacao(whats, codigo);
             if (!validacao.valido) {
-                erroEl.innerText = validacao.expirada
-                    ? '⚠️ Este código já venceu! Solicite um novo código de renovação.'
-                    : '❌ Código inválido para este número de WhatsApp!';
+                if (validacao.revogada) {
+                    erroEl.innerText = '🚫 Este código/número foi desativado pelo administrador!';
+                } else if (validacao.expirada) {
+                    erroEl.innerText = '⚠️ Este código já venceu! Solicite um novo código de renovação.';
+                } else {
+                    erroEl.innerText = '❌ Código inválido para este número de WhatsApp!';
+                }
                 erroEl.classList.remove('hidden');
                 return;
             }
@@ -893,10 +1131,7 @@
         }
 
         function solicitarChaveNoWhatsApp() {
-            const nome = document.getElementById('licenca-nome').value.trim() || 'Motoboy';
-            const whats = limparTelefone(document.getElementById('licenca-whats').value) || 'meu número';
-            const msg = `Olá! Sou ${nome} (WhatsApp: ${whats}) e quero adquirir minha chave de acesso ao aplicativo *BaseMoto PRO*!`;
-            copiarTextoParaAreaDeTransferencia(msg, 'Pedido copiado! Envie para o administrador no WhatsApp.');
+            window.open('https://w.app/y3bcuj', '_blank');
         }
 
         // ==================== PAINEL SECRETO DO ADMIN (5 TOQUES NA LOGO) ====================
@@ -932,14 +1167,21 @@
 
         function selecionarPlanoAdmin(plano) {
             planoAdminSelecionado = plano;
+            const btnTeste = document.getElementById('btn-plano-teste');
             const btnMensal = document.getElementById('btn-plano-mensal');
             const btnVitalicio = document.getElementById('btn-plano-vitalicio');
-            if (plano === 'MENSAL') {
-                btnMensal.className = "py-2.5 px-3 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-xs transition";
-                btnVitalicio.className = "py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition";
-            } else {
-                btnVitalicio.className = "py-2.5 px-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-extrabold text-xs transition";
-                btnMensal.className = "py-2.5 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-xs transition";
+
+            const inativoClass = "py-2.5 px-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 font-bold text-[11px] transition";
+            if (btnTeste) btnTeste.className = inativoClass;
+            if (btnMensal) btnMensal.className = inativoClass;
+            if (btnVitalicio) btnVitalicio.className = inativoClass;
+
+            if (plano === 'TESTE' && btnTeste) {
+                btnTeste.className = "py-2.5 px-2 rounded-xl border border-sky-500 bg-sky-500/15 text-sky-300 font-extrabold text-[11px] transition";
+            } else if (plano === 'MENSAL' && btnMensal) {
+                btnMensal.className = "py-2.5 px-2 rounded-xl border border-amber-500 bg-amber-500/15 text-amber-300 font-extrabold text-[11px] transition";
+            } else if (plano === 'VITALICIO' && btnVitalicio) {
+                btnVitalicio.className = "py-2.5 px-2 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 font-extrabold text-[11px] transition";
             }
             gerarCodigoClienteAdmin();
         }
@@ -960,6 +1202,13 @@
                 return;
             }
 
+            // Remove da lista de revogados caso estivesse bloqueado antes
+            if (Array.isArray(estado.revogados)) {
+                estado.revogados = estado.revogados.filter(item => item !== whats && item !== cod);
+            } else {
+                estado.revogados = [];
+            }
+
             // Salva ou atualiza o membro na lista de clientes do vendedor
             const idxExistente = estado.clientesAdmin.findIndex(c => c.whats === whats);
             const registroCliente = {
@@ -968,6 +1217,7 @@
                 whats,
                 codigo: cod,
                 plano: planoAdminSelecionado,
+                bloqueado: false,
                 atualizadoEm: new Date().toISOString()
             };
 
@@ -978,6 +1228,7 @@
             }
 
             persistirDados();
+            sincronizarNuvemAdmin(true);
             renderizarClientesAdmin();
 
             // Limpa os campos após cadastrar
@@ -986,9 +1237,12 @@
             document.getElementById('adm-codigo-resultado').innerText = 'DIGITE O WHATSAPP';
 
             const info = extrairInfoDoCodigo(cod);
-            const descPlano = planoAdminSelecionado === 'MENSAL' ? `Mensal (Válido até ${info.dataFormatada})` : 'Vitalício ♾️';
+            let descPlano = 'Vitalício ♾️';
+            if (planoAdminSelecionado === 'TESTE') descPlano = `Teste Grátis 3 Dias (Até ${info.dataFormatada})`;
+            if (planoAdminSelecionado === 'MENSAL') descPlano = `Mensal 30 Dias (Até ${info.dataFormatada})`;
+
             const texto = `🏍️ *Acesso Liberado — BaseMoto PRO*\n\nFala, *${nome}*! Aqui está sua chave exclusiva de ativação:\n\n📱 *WhatsApp cadastrado:* ${whats}\n🔑 *Código de Ativação:* ${cod}\n📅 *Plano:* ${descPlano}\n\n*Como instalar no celular:*\n1. Abra o link do app no Safari (iPhone) ou Chrome (Android)\n2. Digite seu nome, seu WhatsApp (${whats}) e o código acima\n3. Adicione à Tela de Início para usar como aplicativo!`;
-            copiarTextoParaAreaDeTransferencia(texto, `${nome} salvo na lista e código copiado!`);
+            copiarTextoParaAreaDeTransferencia(texto, `${nome} salvo e código copiado!`);
         }
 
         function filtrarClientesAdmin(filtro) {
@@ -1019,14 +1273,39 @@
             const novoCodigo = criarCodigoAtivacao(cliente.whats, 'MENSAL', baseDate);
             cliente.codigo = novoCodigo;
             cliente.plano = 'MENSAL';
+            cliente.bloqueado = false;
             cliente.atualizadoEm = new Date().toISOString();
 
+            if (Array.isArray(estado.revogados)) {
+                estado.revogados = estado.revogados.filter(r => r !== cliente.whats);
+            }
+
             persistirDados();
+            sincronizarNuvemAdmin(true);
             renderizarClientesAdmin();
 
             const novaInfo = extrairInfoDoCodigo(novoCodigo);
             const msgRenovacao = `✅ *Assinatura Renovada — BaseMoto PRO*\n\nValeu pelo pagamento, *${cliente.nome}*! Seu acesso foi renovado por mais 30 dias.\n\n📱 *WhatsApp:* ${cliente.whats}\n🔑 *Novo Código de Ativação:* ${novoCodigo}\n📅 *Nova Validade:* ${novaInfo.dataFormatada}\n\nBasta colar esse novo código na tela de ativação do seu BaseMoto! 🚀`;
             copiarTextoParaAreaDeTransferencia(msgRenovacao, `Renovado até ${novaInfo.dataFormatada}! Código copiado!`);
+        }
+
+        function alternarBloqueioMembroAdmin(whatsCliente) {
+            const cliente = estado.clientesAdmin.find(c => c.whats === whatsCliente);
+            if (!cliente) return;
+            cliente.bloqueado = !cliente.bloqueado;
+
+            if (!Array.isArray(estado.revogados)) estado.revogados = [];
+            if (cliente.bloqueado) {
+                if (!estado.revogados.includes(cliente.whats)) estado.revogados.push(cliente.whats);
+                if (!estado.revogados.includes(cliente.codigo)) estado.revogados.push(cliente.codigo);
+            } else {
+                estado.revogados = estado.revogados.filter(r => r !== cliente.whats && r !== cliente.codigo);
+            }
+
+            persistirDados();
+            sincronizarNuvemAdmin(true);
+            renderizarClientesAdmin();
+            mostrarToast(cliente.bloqueado ? `Acesso de ${cliente.nome} BLOQUEADO!` : `Acesso de ${cliente.nome} LIBERADO!`, cliente.bloqueado ? '🚫' : '✅');
         }
 
         function copiarCobrancaMembroAdmin(whatsCliente) {
@@ -1051,13 +1330,19 @@
             const cliente = estado.clientesAdmin.find(c => c.whats === whatsCliente);
             if (!cliente) return;
             pedirConfirmacao(
-                'Remover Membro',
-                `Deseja remover "${cliente.nome}" da sua lista de controle?`,
+                'Revogar e Excluir Membro',
+                `Deseja remover "${cliente.nome}" e CORTAR o acesso do código dele?`,
                 () => {
+                    if (!Array.isArray(estado.revogados)) estado.revogados = [];
+                    if (!estado.revogados.includes(cliente.whats)) estado.revogados.push(cliente.whats);
+                    if (!estado.revogados.includes(cliente.codigo)) estado.revogados.push(cliente.codigo);
+
                     estado.clientesAdmin = estado.clientesAdmin.filter(c => c.whats !== whatsCliente);
                     persistirDados();
+                    sincronizarNuvemAdmin(true);
+                    verificarLicencaSalva();
                     renderizarClientesAdmin();
-                    mostrarToast('Membro removido da lista.', '🗑️');
+                    mostrarToast('Membro removido e código bloqueado!', '🚫');
                 }
             );
         }
@@ -1072,7 +1357,7 @@
 
             const clientesProcessados = (estado.clientesAdmin || []).map(c => {
                 const info = extrairInfoDoCodigo(c.codigo);
-                if (info.status === 'vencido') qtdVencidos++;
+                if (c.bloqueado || info.status === 'vencido') qtdVencidos++;
                 else if (info.status === 'vencendo') {
                     qtdAtivos++;
                     qtdVencendo++;
@@ -1088,7 +1373,7 @@
 
             const filtrados = clientesProcessados.filter(item => {
                 if (filtroAdminAtual === 'pendentes') {
-                    return item.info.status === 'vencido' || item.info.status === 'vencendo';
+                    return item.bloqueado || item.info.status === 'vencido' || item.info.status === 'vencendo';
                 }
                 return true;
             }).sort((a, b) => a.info.diasRestantes - b.info.diasRestantes);
@@ -1104,7 +1389,11 @@
                 let textoTempo = '';
                 let corBorda = 'border-slate-800';
 
-                if (info.status === 'vitalicio') {
+                if (item.bloqueado) {
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-300 border border-rose-500/40">🚫 Bloqueado</span>`;
+                    textoTempo = `Acesso cortado pelo vendedor`;
+                    corBorda = 'border-rose-500/50';
+                } else if (info.status === 'vitalicio') {
                     badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300">Vitalício ♾️</span>`;
                     textoTempo = `Sem vencimento`;
                 } else if (info.status === 'vencido') {
@@ -1113,7 +1402,7 @@
                     textoTempo = diasAtraso === 0 ? `Venceu hoje (${info.dataFormatada})` : `Vencido há ${diasAtraso} dia(s) (${info.dataFormatada})`;
                     corBorda = 'border-rose-500/40';
                 } else if (info.status === 'vencendo') {
-                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Vence em ${info.diasRestantes}d</span>`;
+                    badgeStatus = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">${item.plano === 'TESTE' ? '⏳ Teste' : 'Vence em'} ${info.diasRestantes}d</span>`;
                     textoTempo = `Faltam ${info.diasRestantes} dia(s) • Até ${info.dataFormatada}`;
                     corBorda = 'border-amber-500/40';
                 } else {
@@ -1132,15 +1421,18 @@
                                 <p class="text-[11px] text-slate-400 font-medium mt-0.5">📱 ${item.whats} • 🔑 <span class="text-slate-300 font-bold select-all">${item.codigo}</span></p>
                                 <p class="text-[10px] text-slate-400 mt-0.5">⏳ ${textoTempo}</p>
                             </div>
-                            <button type="button" onclick="excluirMembroAdmin('${item.whats}')" title="Remover da lista" class="text-slate-500 hover:text-rose-400 text-xs px-1.5 py-0.5">✕</button>
+                            <button type="button" onclick="excluirMembroAdmin('${item.whats}')" title="Revogar e Remover" class="text-slate-500 hover:text-rose-400 text-xs px-1.5 py-0.5">🗑️</button>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-slate-800/80">
-                            <button type="button" onclick="reativarMembroAdmin('${item.whats}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-extrabold py-2 px-2.5 rounded-lg text-[11px] transition active:scale-95 flex items-center justify-center gap-1">
-                                🔄 Reativar +30d
+                        <div class="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-800/80">
+                            <button type="button" onclick="reativarMembroAdmin('${item.whats}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-extrabold py-2 px-2 rounded-lg text-[10px] transition active:scale-95 flex items-center justify-center gap-1">
+                                🔄 +30d
                             </button>
-                            <button type="button" onclick="copiarCobrancaMembroAdmin('${item.whats}')" class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2 px-2.5 rounded-lg text-[11px] transition active:scale-95 flex items-center justify-center gap-1">
-                                💬 Cobrar c/ Pix
+                            <button type="button" onclick="copiarCobrancaMembroAdmin('${item.whats}')" class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2 px-2 rounded-lg text-[10px] transition active:scale-95 flex items-center justify-center gap-1">
+                                💬 Cobrar
+                            </button>
+                            <button type="button" onclick="alternarBloqueioMembroAdmin('${item.whats}')" class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold py-2 px-2 rounded-lg text-[10px] transition active:scale-95 flex items-center justify-center gap-1">
+                                ${item.bloqueado ? '🔓 Liberar' : '🚫 Bloquear'}
                             </button>
                         </div>
                     </div>
@@ -1536,6 +1828,7 @@
                     estado.ultimaOrigem = parsed.ultimaOrigem || '';
                     estado.ultimaLoja = parsed.ultimaLoja || '';
                     estado.clientesAdmin = Array.isArray(parsed.clientesAdmin) ? parsed.clientesAdmin : [];
+                    estado.revogados = Array.isArray(parsed.revogados) ? parsed.revogados : [];
                 }
             } catch (e) { console.error(e); }
 
@@ -1628,12 +1921,64 @@
             if (!modalEl) return;
             modalEl.classList.remove('hidden');
             if (tipo === 'entrega') {
+                document.getElementById('entrega-edit-id').value = '';
+                document.getElementById('titulo-modal-entrega').innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-500"></span> Nova Entrega`;
+                document.getElementById('btn-submit-entrega').innerText = 'Salvar Entrega';
                 document.getElementById('entrega-loja').value = '';
                 document.getElementById('entrega-coletado').value = '';
                 document.getElementById('entrega-entregue').value = '';
                 document.getElementById('entrega-valor').value = '';
+                document.querySelector('input[name="entrega-metodo"][value="Pix"]').checked = true;
+                document.querySelector('input[name="entrega-status"][value="pago"]').checked = true;
                 document.getElementById('badge-auto-preco').classList.add('hidden');
                 document.getElementById('badge-consultar-preco').classList.add('hidden');
+            }
+            if (tipo === 'gasolina') {
+                document.getElementById('gasolina-edit-id').value = '';
+                document.getElementById('titulo-modal-gasolina').innerHTML = `<span>⛽</span> Abastecimento / Gasto`;
+                document.getElementById('gasolina-valor').value = '';
+                document.getElementById('gasolina-obs').value = 'Gasolina';
+            }
+            if (tipo === 'sangria') {
+                document.getElementById('sangria-edit-id').value = '';
+                document.getElementById('titulo-modal-sangria').innerHTML = `<span>💸</span> Realizar Sangria`;
+                document.getElementById('sangria-valor').value = '';
+                document.getElementById('sangria-obs').value = '';
+            }
+        }
+
+        function editarMovimentacao(id) {
+            const mov = estado.movimentacoes.find(m => m.id === id);
+            if (!mov) return;
+
+            if (mov.tipo === 'entrega') {
+                document.getElementById('modal-entrega').classList.remove('hidden');
+                document.getElementById('entrega-edit-id').value = mov.id;
+                document.getElementById('titulo-modal-entrega').innerHTML = `<span class="w-3 h-3 rounded-full bg-sky-400"></span> Editar Entrega`;
+                document.getElementById('btn-submit-entrega').innerText = 'Salvar Alterações';
+
+                document.getElementById('entrega-loja').value = mov.loja || '';
+                document.getElementById('entrega-coletado').value = mov.coletado || '';
+                document.getElementById('entrega-entregue').value = mov.entregue || '';
+                document.getElementById('entrega-valor').value = mov.valor.toFixed(2);
+
+                const radioMetodo = document.querySelector(`input[name="entrega-metodo"][value="${mov.metodo}"]`);
+                if (radioMetodo) radioMetodo.checked = true;
+
+                const radioStatus = document.querySelector(`input[name="entrega-status"][value="${mov.status}"]`);
+                if (radioStatus) radioStatus.checked = true;
+
+                document.getElementById('badge-auto-preco').classList.add('hidden');
+                document.getElementById('badge-consultar-preco').classList.add('hidden');
+            } else if (mov.tipo === 'gasolina' || mov.tipo === 'sangria') {
+                const tipo = mov.tipo;
+                document.getElementById(`modal-${tipo}`).classList.remove('hidden');
+                document.getElementById(`${tipo}-edit-id`).value = mov.id;
+                document.getElementById(`titulo-modal-${tipo}`).innerHTML = tipo === 'gasolina'
+                    ? `<span>✏️</span> Editar Gasto`
+                    : `<span>✏️</span> Editar Sangria`;
+                document.getElementById(`${tipo}-valor`).value = mov.valor.toFixed(2);
+                document.getElementById(`${tipo}-obs`).value = mov.obs || '';
             }
         }
 
@@ -1672,6 +2017,7 @@
         function salvarEntrega(e) {
             e.preventDefault();
             const data = getDataSelecionada();
+            const editId = document.getElementById('entrega-edit-id').value;
             const loja = document.getElementById('entrega-loja').value.trim();
             const coletado = document.getElementById('entrega-coletado').value.trim() || loja;
             const entregue = document.getElementById('entrega-entregue').value.trim();
@@ -1682,44 +2028,68 @@
             if (coletado) estado.ultimaOrigem = coletado;
             if (loja) estado.ultimaLoja = loja;
 
-            const novaMov = {
-                id: 'ent_' + Date.now(),
-                tipo: 'entrega',
-                data,
-                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                coletado, entregue, loja, valor, metodo, status
-            };
+            if (editId) {
+                const idx = estado.movimentacoes.findIndex(m => m.id === editId);
+                if (idx >= 0) {
+                    estado.movimentacoes[idx] = {
+                        ...estado.movimentacoes[idx],
+                        coletado, entregue, loja, valor, metodo, status
+                    };
+                }
+            } else {
+                const novaMov = {
+                    id: 'ent_' + Date.now(),
+                    tipo: 'entrega',
+                    data,
+                    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    coletado, entregue, loja, valor, metodo, status
+                };
+                estado.movimentacoes.unshift(novaMov);
+            }
 
-            estado.movimentacoes.unshift(novaMov);
             persistirDados();
             popularDatalistsESelect();
             fecharModais();
             e.target.reset();
+            document.getElementById('entrega-edit-id').value = '';
             document.getElementById('badge-auto-preco').classList.add('hidden');
             document.getElementById('badge-consultar-preco').classList.add('hidden');
             atualizarInterface();
-            mostrarToast('Entrega salva com sucesso!');
+            renderizarAcertos();
+            mostrarToast(editId ? 'Entrega atualizada!' : 'Entrega salva com sucesso!');
         }
 
         function salvarSaida(e, tipo) {
             e.preventDefault();
             const data = getDataSelecionada();
+            const editId = document.getElementById(`${tipo}-edit-id`).value;
             const valor = parseFloat(document.getElementById(`${tipo}-valor`).value) || 0;
             const obs = document.getElementById(`${tipo}-obs`).value.trim() || (tipo === 'gasolina' ? 'Gasolina' : 'Sangria');
 
-            const novaMov = {
-                id: tipo + '_' + Date.now(),
-                tipo, data,
-                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                valor, obs
-            };
+            if (editId) {
+                const idx = estado.movimentacoes.findIndex(m => m.id === editId);
+                if (idx >= 0) {
+                    estado.movimentacoes[idx] = {
+                        ...estado.movimentacoes[idx],
+                        valor, obs
+                    };
+                }
+            } else {
+                const novaMov = {
+                    id: tipo + '_' + Date.now(),
+                    tipo, data,
+                    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                    valor, obs
+                };
+                estado.movimentacoes.unshift(novaMov);
+            }
 
-            estado.movimentacoes.unshift(novaMov);
             persistirDados();
             fecharModais();
             e.target.reset();
+            document.getElementById(`${tipo}-edit-id`).value = '';
             atualizarInterface();
-            mostrarToast(tipo === 'gasolina' ? 'Gasto lançado!' : 'Sangria realizada!');
+            mostrarToast(editId ? 'Lançamento atualizado!' : (tipo === 'gasolina' ? 'Gasto lançado!' : 'Sangria realizada!'));
         }
 
         function excluirMovimentacao(id) {
@@ -1842,8 +2212,9 @@
                                 <span class="text-[10px] text-slate-500">${m.hora} • ${m.metodo}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="text-sm font-extrabold text-emerald-400">R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="text-sm font-extrabold text-emerald-400 mr-0.5">R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                            <button onclick="editarMovimentacao('${m.id}')" title="Editar Entrega" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/20 text-slate-300 hover:text-sky-400">✏️</button>
                             <button onclick="alternarStatusEntrega('${m.id}')" title="Alternar Pago/Pendente" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🔄</button>
                             <button onclick="excluirMovimentacao('${m.id}')" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400">✕</button>
                         </div>
@@ -1859,8 +2230,9 @@
                                 <span class="text-[10px] text-slate-500">${m.hora}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="text-sm font-extrabold ${isGas ? 'text-rose-400' : 'text-indigo-400'}">- R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <span class="text-sm font-extrabold ${isGas ? 'text-rose-400' : 'text-indigo-400'} mr-0.5">- R$ ${m.valor.toFixed(2).replace('.', ',')}</span>
+                            <button onclick="editarMovimentacao('${m.id}')" title="Editar" class="p-1.5 rounded-lg bg-slate-800 hover:bg-sky-500/20 text-slate-300 hover:text-sky-400">✏️</button>
                             <button onclick="excluirMovimentacao('${m.id}')" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400">✕</button>
                         </div>
                     `;
@@ -2102,6 +2474,7 @@ _Gerado via BaseMoto_`;
         window.addEventListener('DOMContentLoaded', () => {
             inicializarIconeAutomatico();
             carregarDados();
+            carregarConfigNuvem();
             inicializarTabelaPrecos();
             document.getElementById('date-selector').value = getHojeISO();
             atualizarInterface();
